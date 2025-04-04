@@ -14,7 +14,7 @@ export const Login = () => {
     }
 
     try {
-      const response = await fetch('/api/login', {
+      const response = await fetch(import.meta.env.VITE_SERVER_URL + '/user/login', {
         method: 'POST',
         body: JSON.stringify({ email, password }),
         headers: {
@@ -22,14 +22,14 @@ export const Login = () => {
         },
       });
 
+      console.log('Response:', response);
+
       if (!response.ok) {
         throw new Error('Failed to login');
       }
 
       const data = await response.json();
       console.log('Login successful:', data);
-
-      window.location.href = '/dashboard';
     } catch (error) {
       console.error('Error during login:', error);
     }

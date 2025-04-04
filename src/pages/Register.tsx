@@ -5,10 +5,41 @@ import { TextField } from '@mui/material';
 
 export const Register = () => {
   const register = async (formData: FormData) => {
+    const name = formData.get('name');
     const email = formData.get('email');
     const password = formData.get('password');
+    const confirmPassword = formData.get('confirmPassword');
 
-    console.log(email, password);
+    if (!name || !email || !password || !confirmPassword) {
+      console.error('All fields are required');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      console.error('Passwords do not match');
+      return;
+    }
+
+    try {
+      const response = await fetch(import.meta.env.VITE_SERVER_URL + '/user/register', {
+        method: 'POST',
+        body: JSON.stringify({ name, email, password }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      console.log('Response:', response);
+
+      if (!response.ok) {
+        throw new Error('Failed to register');
+      }
+
+      const data = await response.json();
+      console.log('Registration successful:', data);
+    } catch (error) {
+      console.error('Error during registration:', error);
+    }
   };
 
   return (
@@ -86,14 +117,14 @@ export const Register = () => {
               required
               fullWidth
               sx={{ marginTop: '10px' }}
-            />
+            />x
           </Box>
           <Box sx={{ marginBottom: '20px' }}>
             <TextField
               variant="outlined"
               name="confirmPassword"
               id="confirmPassword"
-              type="confirmPassword"
+              type="password"
               label="Confirm password"
               placeholder="Confirm your password"
               required
