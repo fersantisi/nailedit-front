@@ -51,10 +51,10 @@ export const Login = () => {
           },
         }}
         onClick={() => {
-          window.location.href = '/register';
+          window.location.href = '/';
         }}
       >
-        Back to Register
+        Back to Home
       </Button>
       <Card
         variant="outlined"
@@ -68,7 +68,7 @@ export const Login = () => {
         <Box
           sx={{ textAlign: 'center', marginBottom: '20px', fontWeight: 'bold' }}
         >
-          <Typography variant="h2" component="h1" gutterBottom>
+          <Typography variant="h3" component="h1" gutterBottom>
             Login
           </Typography>
         </Box>

@@ -1,11 +1,11 @@
 import { Link } from 'react-router';
 
 interface NavbarItemProps {
-  label: string;
   to: string;
+  children?: React.ReactNode;
 }
 
-export const NavbarItem = ({ label, to }: NavbarItemProps) => {
+export const NavbarItem = ({ to, children }: NavbarItemProps) => {
   return (
     <Link
       to={to}
@@ -16,7 +16,7 @@ export const NavbarItem = ({ label, to }: NavbarItemProps) => {
         fontSize: '16px',
       }}
     >
-      {label}
+      {children}
     </Link>
   );
 };
