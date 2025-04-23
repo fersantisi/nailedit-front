@@ -5,10 +5,16 @@ import { TextField } from '@mui/material';
 
 export const NewProject = () => {
   const createProject = async (formData: FormData) => {
-    const name = formData.get('name');
-    const description = formData.get('description');
+    const name = formData.get('projectName');
+    const description = formData.get('projectDescription');
+    const category = formData.get('projectCategory');
+    const image = formData.get('projectImage');
+    const duedate = formData.get('dueDate');
 
-    if (!name || !description) {
+    console.log(typeof duedate);
+    
+
+    if (!name) {
       console.error('All fields are required');
       return;
     }
@@ -18,7 +24,7 @@ export const NewProject = () => {
         import.meta.env.VITE_SERVER_URL + '/project/create',
         {
           method: 'POST',
-          body: JSON.stringify({ name, description }),
+          body: JSON.stringify({ name, description, category, image, duedate }),
           headers: {
             'Content-Type': 'application/json',
           },
@@ -81,7 +87,7 @@ export const NewProject = () => {
               variant="outlined"
               name="projectName"
               id="projectName"
-              type="projectName"
+              type="text"
               label="Project Name"
               placeholder="Enter project's name"
               required
@@ -92,9 +98,21 @@ export const NewProject = () => {
           <Box sx={{ marginBottom: '20px' }}>
             <TextField
               variant="outlined"
+              name="projectDescription"
+              id="projectDescription"
+              type="text"
+              label="Description (optional)"
+              placeholder="Enter a Description"
+              fullWidth
+              sx={{ marginTop: '10px' }}
+            />
+          </Box>
+          <Box sx={{ marginBottom: '20px' }}>
+            <TextField
+              variant="outlined"
               name="projectCategory"
               id="projectCategory"
-              type="projectCategory"
+              type="text"
               label="Category (optional)"
               placeholder="Enter a category"
               fullWidth
@@ -106,7 +124,7 @@ export const NewProject = () => {
               variant="outlined"
               name="projectImage"
               id="projectImage"
-              type="projectImage"
+              type="text"
               label="Image (optional)"
               placeholder="Upload an image"
               fullWidth
