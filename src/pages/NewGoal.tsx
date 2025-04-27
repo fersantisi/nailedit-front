@@ -3,42 +3,39 @@ import { Card } from '../components/ui/card';
 import { Box, Button } from '@mui/material';
 import { TextField } from '@mui/material';
 
-export const Register = () => {
-  const register = async (formData: FormData) => {
-    const name = formData.get('name');
-    const email = formData.get('email');
-    const password = formData.get('password');
-    const confirmPassword = formData.get('confirmPassword');
+export const NewGoal = () => {
+  const createGoal = async (formData: FormData) => {
+    const name = formData.get('goalName');
+    const description = formData.get('goalDescription');
+    const duedate = formData.get('dueDate');
 
-    if (!name || !email || !password || !confirmPassword) {
+    if (!name) {
       console.error('All fields are required');
       return;
     }
 
-    if (password !== confirmPassword) {
-      console.error('Passwords do not match');
-      return;
-    }
-
     try {
-      const response = await fetch(import.meta.env.VITE_SERVER_URL + '/auth/register', {
-        method: 'POST',
-        body: JSON.stringify({ name, email, password }),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+      const response = await fetch(
+        import.meta.env.VITE_SERVER_URL + '/goal/create',
+        {
+          method: 'POST',
+          body: JSON.stringify({ name, description, duedate }),
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
 
       console.log('Response:', response);
 
       if (!response.ok) {
-        throw new Error('Failed to register');
+        throw new Error('Failed to create goal');
       }
 
       const data = await response.json();
-      console.log('Registration successful:', data);
+      console.log('Goal created successfully:', data);
     } catch (error) {
-      console.error('Error during registration:', error);
+      console.error('Error during goal creation:', error);
     }
   };
 
@@ -76,18 +73,18 @@ export const Register = () => {
           sx={{ textAlign: 'center', marginBottom: '20px', fontWeight: 'bold' }}
         >
           <Typography variant="h3" component="h1" gutterBottom>
-            Register
+            New Goal
           </Typography>
         </Box>
-        <Box component="form" action={register} noValidate>
+        <Box component="form" action={createGoal} noValidate>
           <Box sx={{ marginBottom: '20px' }}>
             <TextField
               variant="outlined"
-              name="name"
-              id="name"
-              type="name"
-              label="Name"
-              placeholder="Enter your Name"
+              name="goalName"
+              id="goalName"
+              type="text"
+              label="Goal Name"
+              placeholder="Enter goal's name"
               required
               fullWidth
               sx={{ marginTop: '10px' }}
@@ -96,12 +93,11 @@ export const Register = () => {
           <Box sx={{ marginBottom: '20px' }}>
             <TextField
               variant="outlined"
-              name="email"
-              id="email"
-              type="email"
-              label="Email"
-              placeholder="Enter your e-mail"
-              required
+              name="goalDescription"
+              id="goalDescription"
+              type="text"
+              label="Description (optional)"
+              placeholder="Enter a Description"
               fullWidth
               sx={{ marginTop: '10px' }}
             />
@@ -109,31 +105,18 @@ export const Register = () => {
           <Box sx={{ marginBottom: '20px' }}>
             <TextField
               variant="outlined"
-              name="password"
-              id="password"
-              type="password"
-              label="Password"
-              placeholder="Enter your password"
-              required
+              name="dueDate"
+              id="dueDate"
+              type="date"
+              label="Due Date (optional)"
+              placeholder="Enter a due date (optional)"
               fullWidth
               sx={{ marginTop: '10px' }}
-            />
-          </Box>
-          <Box sx={{ marginBottom: '20px' }}>
-            <TextField
-              variant="outlined"
-              name="confirmPassword"
-              id="confirmPassword"
-              type="password"
-              label="Confirm password"
-              placeholder="Confirm your password"
-              required
-              fullWidth
-              sx={{ marginTop: '10px' }}
+              slotProps={{ inputLabel: { shrink: true } }}
             />
           </Box>
           <Button type="submit" variant="contained" color="primary" fullWidth>
-            Register
+            Create goal
           </Button>
         </Box>
       </Card>

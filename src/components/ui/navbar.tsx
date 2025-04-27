@@ -18,11 +18,22 @@ export const Navbar = ({ isLoggedIn }: NavbarProps) => {
         }}
       >
         <Box sx={{ display: 'flex', gap: '20px' }}>
-          <NavbarItem to="/">
-            <Typography variant="h6" component="div">
-              NailedIt!
-            </Typography>
-          </NavbarItem>
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <img
+              src="src/assets/nailedit.svg"
+              style={{
+                width: '50px',
+                height: '50px',
+                fill: 'white',
+              }}
+              alt="NailedIt Logo"
+            />
+            <NavbarItem to="/">
+              <Typography variant="h6" component="div">
+                NailedIt!
+              </Typography>
+            </NavbarItem>
+          </Box>
           {isLoggedIn ? (
             <>
               <NavbarItem to="/project/list">
@@ -33,6 +44,16 @@ export const Navbar = ({ isLoggedIn }: NavbarProps) => {
               <NavbarItem to="/project/create">
                 <Typography variant="h6" component="div">
                   New Project
+                </Typography>
+              </NavbarItem>
+              <NavbarItem to="/project/goal/create">
+                <Typography variant="h6" component="div">
+                  New goal
+                </Typography>
+              </NavbarItem>
+              <NavbarItem to="/project/goal/task/create">
+                <Typography variant="h6" component="div">
+                  New task
                 </Typography>
               </NavbarItem>
             </>

@@ -3,13 +3,19 @@ import { Card } from '../ui/card';
 import { Image } from '@mui/icons-material';
 
 interface HomeProjectCardProps {
-  name: number;
+  project: Project;
 }
 
-export const HomeProjectCard = ({ name }: HomeProjectCardProps) => {
+interface Project {
+  id: number;
+  name: string;
+  description: string;
+}
+
+export const HomeProjectCard = ({ project }: HomeProjectCardProps) => {
   return (
     <Card
-      key={name}
+      key={project.id}
       variant="outlined"
       sx={{
         width: '12%',
@@ -24,7 +30,7 @@ export const HomeProjectCard = ({ name }: HomeProjectCardProps) => {
     >
       <Image />
       <Divider sx={{ bgcolor: 'text.primary' }} flexItem />
-      {'Project ' + (name + 1)}
+      {project.name}
     </Card>
   );
 };

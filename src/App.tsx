@@ -4,6 +4,8 @@ import { Box, createTheme, ThemeProvider } from '@mui/material';
 import { Register } from './pages/Register';
 import { NewProject } from './pages/NewProject';
 import { Home } from './pages/Home';
+import { NewGoal } from './pages/NewGoal';
+import Project from './pages/Project';
 
 const theme = createTheme({
   palette: {
@@ -25,13 +27,23 @@ const theme = createTheme({
 
 function App() {
   return (
-    <Box sx={{ height: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+    <Box
+      sx={{
+        height: '100vh',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+      }}
+    >
       <ThemeProvider theme={theme}>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/project/" element={<Project />} />
           <Route path="/project/create" element={<NewProject />} />
+          <Route path="/project/goal/create" element={<NewGoal />} />
+          <Route path="/project/goal/task/create" element={<NewGoal />} />
         </Routes>
       </ThemeProvider>
     </Box>

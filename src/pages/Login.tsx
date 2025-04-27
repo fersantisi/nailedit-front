@@ -5,18 +5,18 @@ import { TextField } from '@mui/material';
 
 export const Login = () => {
   const login = async (formData: FormData) => {
-    const email = formData.get('email');
+    const username = formData.get('username');
     const password = formData.get('password');
 
-    if (!email || !password) {
+    if (!username || !password) {
       console.error('Email and password are required');
       return;
     }
 
     try {
-      const response = await fetch(import.meta.env.VITE_SERVER_URL + '/user/login', {
+      const response = await fetch(import.meta.env.VITE_SERVER_URL + '/auth/login', {
         method: 'POST',
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ username, password }),
         headers: {
           'Content-Type': 'application/json',
         },
@@ -76,11 +76,11 @@ export const Login = () => {
           <Box sx={{ marginBottom: '20px' }}>
             <TextField
               variant="outlined"
-              name="email"
-              id="email"
-              type="email"
-              label="Email"
-              placeholder="Enter your email"
+              name="username"
+              id="username"
+              type="text"
+              label="Username"
+              placeholder="Enter your username"
               required
               fullWidth
               sx={{ marginTop: '10px' }}
