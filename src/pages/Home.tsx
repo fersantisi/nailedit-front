@@ -11,18 +11,41 @@ export const Home = () => {
 
   useEffect(() => {
     const fetchUser = async () => {
-      const response = await fetch(
-        import.meta.env.VITE_SERVER_URL + '/users/profile/2',
-        {
-          method: 'GET',
-          credentials: 'include',
-        }
-      );
+      try {
+        const meResponse = await fetch(
+          import.meta.env.VITE_SERVER_URL + '/users/me',
+          {
+            method: 'GET',
+            credentials: 'include',
+          }
+        );
 
-      if (response.ok) {
-        const userData = await response.json();
-        setUser(userData);
-      } else {
+        if (!meResponse.ok) {
+          setUser(null);
+          return;
+        }
+
+        const meData = await meResponse.json();
+        console.log('meData', meData);
+        
+        const userId = meData.userId;
+        
+        const profileResponse = await fetch(
+          import.meta.env.VITE_SERVER_URL + `/users/profile/${userId}`,
+          {
+            method: 'GET',
+            credentials: 'include',
+          }
+        );
+
+        if (profileResponse.ok) {
+          const userData = await profileResponse.json();
+          setUser(userData);
+        } else {
+          setUser(null);
+        }
+      } catch (error) {
+        console.error('Error fetching user:', error);
         setUser(null);
       }
     };

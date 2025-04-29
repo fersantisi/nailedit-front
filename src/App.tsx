@@ -6,6 +6,10 @@ import { NewProject } from './pages/NewProject';
 import { Home } from './pages/Home';
 import { NewGoal } from './pages/NewGoal';
 import { NewTask } from './pages/NewTask';
+import { Logout } from './pages/Logout';
+import { GuestRoute } from './components/GuestRoute';
+import { PasswordRecovery } from './pages/PasswordRecovery';
+import { PasswordReset } from './pages/PasswordReset';
 
 const theme = createTheme({
   palette: {
@@ -38,11 +42,42 @@ function App() {
       <ThemeProvider theme={theme}>
         <Routes>
           <Route path="/" element={<Home />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
+          <Route
+            path="/login"
+            element={
+              <GuestRoute>
+                <Login />
+              </GuestRoute>
+            }
+          />
+          <Route
+            path="/register"
+            element={
+              <GuestRoute>
+                <Register />
+              </GuestRoute>
+            }
+          />
+          <Route
+            path="/forgot-password"
+            element={
+              <GuestRoute>
+                <PasswordRecovery />
+              </GuestRoute>
+            }
+          />
+          <Route
+            path="/recoverPassword/:token"
+            element={
+              <GuestRoute>
+                <PasswordReset />
+              </GuestRoute>
+            }
+          />
           <Route path="/project/create" element={<NewProject />} />
           <Route path="/project/goal/create" element={<NewGoal />} />
           <Route path="/project/goal/task/create" element={<NewTask />} />
+          <Route path="/logout" element={<Logout />} />
         </Routes>
       </ThemeProvider>
     </Box>

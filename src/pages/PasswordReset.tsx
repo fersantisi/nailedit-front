@@ -2,25 +2,25 @@ import Typography from '@mui/material/Typography';
 import { Card } from '../components/ui/card';
 import { Box, Button } from '@mui/material';
 import { TextField } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 
-export const Login = () => {
+export const PasswordReset = () => {
+  const { token } = useParams<{ token: string }>();
   const navigate = useNavigate();
-  const login = async (formData: FormData) => {
-    const username = formData.get('username');
+  const passRecovery = async (formData: FormData) => {
     const password = formData.get('password');
 
-    if (!username || !password) {
-      console.error('Email and password are required');
+    if (!password) {
+      console.error('Password is required');
       return;
     }
 
     try {
       const response = await fetch(
-        import.meta.env.VITE_SERVER_URL + '/auth/login',
+        import.meta.env.VITE_SERVER_URL + `/auth/recoverPassword/${token}`,
         {
           method: 'POST',
-          body: JSON.stringify({ username, password }),
+          body: JSON.stringify({ password }),
           headers: {
             'Content-Type': 'application/json',
           },
@@ -31,20 +31,16 @@ export const Login = () => {
       console.log('Response:', response);
 
       if (response.ok) {
-        navigate('/');
+        navigate('/login');
       } else {
         console.error(response);
-        console.error('Login failed');
       }
 
       if (!response.ok) {
-        throw new Error('Failed to login');
+        throw new Error('Failed to recover password');
       }
-
-      const data = await response.json();
-      console.log('Login successful:', data);
     } catch (error) {
-      console.error('Error during login:', error);
+      console.error('Error during recovery:', error);
     }
   };
 
@@ -82,23 +78,10 @@ export const Login = () => {
           sx={{ textAlign: 'center', marginBottom: '20px', fontWeight: 'bold' }}
         >
           <Typography variant="h3" component="h1" gutterBottom>
-            Log in
+            Reset pass
           </Typography>
         </Box>
-        <Box component="form" action={login} noValidate>
-          <Box sx={{ marginBottom: '20px' }}>
-            <TextField
-              variant="outlined"
-              name="username"
-              id="username"
-              type="text"
-              label="Username"
-              placeholder="Enter your username"
-              required
-              fullWidth
-              sx={{ marginTop: '10px' }}
-            />
-          </Box>
+        <Box component="form" action={passRecovery} noValidate>
           <Box sx={{ marginBottom: '20px' }}>
             <TextField
               variant="outlined"
@@ -113,42 +96,10 @@ export const Login = () => {
             />
           </Box>
           <Button type="submit" variant="contained" color="primary" fullWidth>
-            Login
+            Reset Password
           </Button>
         </Box>
       </Card>
-      <Box
-        sx={{
-          textAlign: 'center',
-          marginTop: '20px',
-          fontWeight: 'bold',
-        }}
-      >
-        <Typography variant="body1" component="p">
-          Don't have an account?{' '}
-          <Button
-            variant="text"
-            color="primary"
-            onClick={() => {
-              window.location.href = '/register';
-            }}
-          >
-            Register
-          </Button>
-        </Typography>
-        <Typography variant="body1" component="p">
-          Forgot your password?{' '}
-          <Button
-            variant="text"
-            color="primary"
-            onClick={() => {
-              window.location.href = '/forgot-password';
-            }}
-          >
-            Reset password
-          </Button>
-        </Typography>
-      </Box>
     </Box>
   );
 };

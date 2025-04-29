@@ -137,6 +137,26 @@ export const Register = () => {
           </Button>
         </Box>
       </Card>
+      <Box
+        sx={{
+          textAlign: 'center',
+          marginTop: '20px',
+          fontWeight: 'bold',
+        }}
+      >
+        <Typography variant="body1" component="p">
+          Already registered?{' '}
+          <Button
+            variant="text"
+            color="primary"
+            onClick={() => {
+              window.location.href = '/login';
+            }}
+          >
+            Log in
+          </Button>
+        </Typography>
+      </Box>
     </Box>
   );
 };
