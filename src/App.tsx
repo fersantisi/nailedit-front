@@ -10,6 +10,7 @@ import { Logout } from './pages/Logout';
 import { GuestRoute } from './components/GuestRoute';
 import { PasswordRecovery } from './pages/PasswordRecovery';
 import { PasswordReset } from './pages/PasswordReset';
+import { Project } from './pages/Project';
 
 const theme = createTheme({
   palette: {
@@ -74,8 +75,9 @@ function App() {
               </GuestRoute>
             }
           />
+          <Route path='/project/:id' element={<Project />} />
           <Route path="/project/create" element={<NewProject />} />
-          <Route path="/project/goal/create" element={<NewGoal />} />
+          <Route path="/project/:id/goal/create" element={<NewGoal />} />
           <Route path="/project/goal/task/create" element={<NewTask />} />
           <Route path="/logout" element={<Logout />} />
         </Routes>

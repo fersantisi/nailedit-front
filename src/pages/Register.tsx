@@ -2,15 +2,17 @@ import Typography from '@mui/material/Typography';
 import { Card } from '../components/ui/card';
 import { Box, Button } from '@mui/material';
 import { TextField } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
 
 export const Register = () => {
+  const navigate = useNavigate();
   const register = async (formData: FormData) => {
-    const name = formData.get('name');
+    const username = formData.get('username');
     const email = formData.get('email');
     const password = formData.get('password');
     const confirmPassword = formData.get('confirmPassword');
 
-    if (!name || !email || !password || !confirmPassword) {
+    if (!username || !email || !password || !confirmPassword) {
       console.error('All fields are required');
       return;
     }
@@ -23,7 +25,7 @@ export const Register = () => {
     try {
       const response = await fetch(import.meta.env.VITE_SERVER_URL + '/auth/signin', {
         method: 'POST',
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify({ username, email, password }),
         headers: {
           'Content-Type': 'application/json',
         },
@@ -31,6 +33,10 @@ export const Register = () => {
 
       console.log('Response:', response);
 
+      if (response.ok) {
+        navigate('/login');
+      } 
+      
       if (!response.ok) {
         throw new Error('Failed to register');
       }
@@ -83,11 +89,11 @@ export const Register = () => {
           <Box sx={{ marginBottom: '20px' }}>
             <TextField
               variant="outlined"
-              name="name"
-              id="name"
-              type="name"
-              label="Name"
-              placeholder="Enter your Name"
+              name="username"
+              id="username"
+              type="username"
+              label="Username"
+              placeholder="Enter your username"
               required
               fullWidth
               sx={{ marginTop: '10px' }}

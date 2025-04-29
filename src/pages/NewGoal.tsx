@@ -2,8 +2,11 @@ import Typography from '@mui/material/Typography';
 import { Card } from '../components/ui/card';
 import { Box, Button } from '@mui/material';
 import { TextField } from '@mui/material';
+import { useNavigate, useParams } from 'react-router-dom';
 
 export const NewGoal = () => {
+  const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
   const createGoal = async (formData: FormData) => {
     const name = formData.get('goalName');
     const description = formData.get('goalDescription');
@@ -16,7 +19,7 @@ export const NewGoal = () => {
 
     try {
       const response = await fetch(
-        import.meta.env.VITE_SERVER_URL + '/project/1/createGoal',
+        import.meta.env.VITE_SERVER_URL + `/project/${id}/createGoal`,
         {
           method: 'POST',
           body: JSON.stringify({ name, description, dueDate }),

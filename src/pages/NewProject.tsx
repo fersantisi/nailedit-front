@@ -2,8 +2,10 @@ import Typography from '@mui/material/Typography';
 import { Card } from '../components/ui/card';
 import { Box, Button } from '@mui/material';
 import { TextField } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
 
 export const NewProject = () => {
+  const navigate = useNavigate();
   const createProject = async (formData: FormData) => {
     const name = formData.get('projectName');
     const description = formData.get('projectDescription');
@@ -41,6 +43,10 @@ export const NewProject = () => {
           message += error.constraints.isNotEmpty + '\n';
         }
         throw new Error(message);
+      }
+
+      if (response.ok) {
+        navigate('/');
       }
 
       console.log('Project created successfully:', data);

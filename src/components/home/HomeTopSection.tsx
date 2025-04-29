@@ -89,7 +89,6 @@ export const HomeTopSection = () => {
       >
         {projects.map((project: Project, index: number) => {
           if (index < 5) {
-            console.log(project);
             return <HomeProjectCard key={project.id} project={project} />;
           }
           return null;
