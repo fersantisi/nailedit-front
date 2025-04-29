@@ -92,6 +92,12 @@ export const Project = () => {
   return (
     <>
       <Link
+        href={`/project/${id}/edit`}
+        style={{ textDecoration: 'none' }}
+      >
+        <HomeTitle title="Edit project" fontSize="30px" />
+      </Link>
+      <Link
         href={`/project/${id}/goal/create`}
         style={{ textDecoration: 'none' }}
       >
