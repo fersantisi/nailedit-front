@@ -38,6 +38,7 @@ export const NewGoal = () => {
 
       const data = await response.json();
       console.log('Goal created successfully:', data);
+      navigate(`/project/${id}`);
     } catch (error) {
       console.error('Error during goal creation:', error);
     }

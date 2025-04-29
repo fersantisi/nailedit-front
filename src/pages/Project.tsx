@@ -4,6 +4,10 @@ import { useEffect, useState } from 'react';
 import { Goal, User } from '../types';
 import { useParams } from 'react-router-dom';
 import { HomeTitle } from '../components/home/HomeTitle';
+import { Card } from '../components/ui/card';
+import DeleteGoal from '../components/project/DeleteGoal';
+import DeleteTask from '../components/project/DeleteTask';
+import DeleteProject from '../components/project/DeleteProject';
 
 export const Project = () => {
   const { id } = useParams<{ id: string }>();
@@ -36,10 +40,9 @@ export const Project = () => {
         setUser(meData);
 
         console.log('ProjectId: ', id);
-        
 
         const goalsResponse = await fetch(
-          import.meta.env.VITE_SERVER_URL + '/project/' + id + '/goal/list',
+          import.meta.env.VITE_SERVER_URL + '/project/' + id + '/goals',
           {
             method: 'GET',
             credentials: 'include',
@@ -47,9 +50,32 @@ export const Project = () => {
         );
 
         if (goalsResponse.ok) {
-          const goals = await goalsResponse.json();
-          console.log('goals', goals);
-          setGoals(goals);
+          const goalsData = await goalsResponse.json();
+          const goalsWithTasks = await Promise.all(
+            goalsData.map(async (goal: Goal) => {
+              const tasksResponse = await fetch(
+                import.meta.env.VITE_SERVER_URL +
+                  '/project/' +
+                  id +
+                  '/goal/' +
+                  goal.id +
+                  '/tasks',
+                {
+                  method: 'GET',
+                  credentials: 'include',
+                }
+              );
+
+              if (tasksResponse.ok) {
+                const tasks = await tasksResponse.json();
+                return { ...goal, tasks };
+              }
+              console.log('Error fetching tasks for goal:', goal);
+
+              return { ...goal, tasks: [] };
+            })
+          );
+          setGoals(goalsWithTasks);
         } else {
           setGoals(null);
         }
@@ -63,35 +89,54 @@ export const Project = () => {
     fetchUser();
   }, [id]);
 
-
   return (
     <>
-      <Link href={`/project/${id}/goal/create`} sx={{ textDecoration: 'none' }}>
+      <Link
+        href={`/project/${id}/goal/create`}
+        style={{ textDecoration: 'none' }}
+      >
         <HomeTitle title="New goal" fontSize="30px" />
       </Link>
-      {goals ? (
+      <DeleteProject projectId={id} />
+
+      {goals?.length ? (
         <Box
           sx={{
-            height: '100vh',
-            display: 'flex',
-            flexDirection: 'column',
             pt: '170px',
             px: '15px',
-            width: '100%',
             gap: '20px',
-            overflow: 'hidden',
+            display: 'flex',
+            flexDirection: 'row',
           }}
         >
           {goals.map((goal) => (
-            <Box key={goal.id}>
-              <h2>{goal.name}</h2>
-              <p>{goal.description}</p>
-            </Box>
+            <Card>
+              <Box key={goal.id}>
+                <h2>Goal: {goal.name}</h2>
+                <p>Description: {goal.description}</p>
+                <DeleteGoal goalId={goal.id} projectId={id} />
+                <ul>
+                  {goal.tasks?.map((task) => (
+                    <li key={task.id}>
+                      Task: {task.name}
+                      <DeleteTask goalId={goal.id} projectId={id} taskId={task.id} />
+                    </li>
+                  ))}
+                </ul>
+                <Link
+                  href={`/project/${id}/goal/${goal.id}/task/create`}
+                  style={{ textDecoration: 'none' }}
+                >
+                  <HomeTitle title="New task" fontSize="30px" />
+                </Link>
+              </Box>
+            </Card>
           ))}
         </Box>
       ) : (
         <HomeTitle title="No goals set" fontSize="30px" />
       )}
+
       <Navbar user={user} />
     </>
   );

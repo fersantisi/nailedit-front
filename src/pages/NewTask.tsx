@@ -2,14 +2,17 @@ import Typography from '@mui/material/Typography';
 import { Card } from '../components/ui/card';
 import { Box, Button } from '@mui/material';
 import { TextField } from '@mui/material';
+import { useNavigate, useParams } from 'react-router-dom';
 
 export const NewTask = () => {
+  const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
+  const { goalId } = useParams<{ goalId: string }>();
   const createTask = async (formData: FormData) => {
     const name = formData.get('taskName');
     const description = formData.get('taskDescription');
-    const priority = formData.get('taskPirority');
     const label = formData.get('taskLabel');
-    const duedate = formData.get('dueDate');
+    const dueDate = formData.get('dueDate');
 
     if (!name) {
       console.error('All fields are required');
@@ -18,10 +21,10 @@ export const NewTask = () => {
 
     try {
       const response = await fetch(
-        import.meta.env.VITE_SERVER_URL + '/task/create',
+        import.meta.env.VITE_SERVER_URL + `/project/${id}/goal/${goalId}/createTask`,
         {
           method: 'POST',
-          body: JSON.stringify({ name, description, priority, label, duedate }),
+          body: JSON.stringify({ name, description, label, dueDate }),
           headers: {
             'Content-Type': 'application/json',
           },
@@ -37,6 +40,7 @@ export const NewTask = () => {
 
       const data = await response.json();
       console.log('Task created successfully:', data);
+      navigate(`/project/${id}`);
     } catch (error) {
       console.error('Error during task creation:', error);
     }
@@ -101,18 +105,6 @@ export const NewTask = () => {
               type="text"
               label="Description (optional)"
               placeholder="Enter a Description"
-              fullWidth
-              sx={{ marginTop: '10px' }}
-            />
-          </Box>
-          <Box sx={{ marginBottom: '20px' }}>
-            <TextField
-              variant="outlined"
-              name="taskPirority"
-              id="taskPirority"
-              type="text"
-              label="Pirority (optional)"
-              placeholder="Enter a Pirority"
               fullWidth
               sx={{ marginTop: '10px' }}
             />

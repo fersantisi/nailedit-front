@@ -8,4 +8,14 @@ export type Goal = {
   name: string;
   description: string;
   dueDate: string;
+  tasks?: Task[];
+};
+
+export type Task = {
+  id: number;
+  goalId: number;
+  name: string;
+  description: string;
+  label: string;
+  dueDate: string;
 };

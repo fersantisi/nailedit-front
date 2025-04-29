@@ -75,10 +75,13 @@ function App() {
               </GuestRoute>
             }
           />
-          <Route path='/project/:id' element={<Project />} />
+          <Route path="/project/:id" element={<Project />} />
           <Route path="/project/create" element={<NewProject />} />
           <Route path="/project/:id/goal/create" element={<NewGoal />} />
-          <Route path="/project/goal/task/create" element={<NewTask />} />
+          <Route
+            path="/project/:id/goal/:goalId/task/create"
+            element={<NewTask />}
+          />
           <Route path="/logout" element={<Logout />} />
         </Routes>
       </ThemeProvider>

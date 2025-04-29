@@ -47,16 +47,6 @@ export const Navbar = ({ user }: NavbarProps) => {
                   New Project
                 </Typography>
               </NavbarItem>
-              <NavbarItem to="/project/goal/create">
-                <Typography variant="h6" component="div">
-                  New goal
-                </Typography>
-              </NavbarItem>
-              <NavbarItem to="/project/goal/task/create">
-                <Typography variant="h6" component="div">
-                  New task
-                </Typography>
-              </NavbarItem>
             </>
           ) : (
             <></>
