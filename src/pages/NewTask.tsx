@@ -3,11 +3,13 @@ import { Card } from '../components/ui/card';
 import { Box, Button } from '@mui/material';
 import { TextField } from '@mui/material';
 
-export const NewGoal = () => {
-  const createGoal = async (formData: FormData) => {
-    const name = formData.get('goalName');
-    const description = formData.get('goalDescription');
-    const dueDate = formData.get('dueDate');
+export const NewTask = () => {
+  const createTask = async (formData: FormData) => {
+    const name = formData.get('taskName');
+    const description = formData.get('taskDescription');
+    const priority = formData.get('taskPirority');
+    const label = formData.get('taskLabel');
+    const duedate = formData.get('dueDate');
 
     if (!name) {
       console.error('All fields are required');
@@ -16,27 +18,26 @@ export const NewGoal = () => {
 
     try {
       const response = await fetch(
-        import.meta.env.VITE_SERVER_URL + '/project/1/createGoal',
+        import.meta.env.VITE_SERVER_URL + '/task/create',
         {
           method: 'POST',
-          body: JSON.stringify({ name, description, dueDate }),
+          body: JSON.stringify({ name, description, priority, label, duedate }),
           headers: {
             'Content-Type': 'application/json',
           },
-          credentials: 'include',
         }
       );
 
       console.log('Response:', response);
 
       if (!response.ok) {
-        throw new Error('Failed to create goal');
+        throw new Error('Failed to create task');
       }
 
       const data = await response.json();
-      console.log('Goal created successfully:', data);
+      console.log('Task created successfully:', data);
     } catch (error) {
-      console.error('Error during goal creation:', error);
+      console.error('Error during task creation:', error);
     }
   };
 
@@ -74,18 +75,18 @@ export const NewGoal = () => {
           sx={{ textAlign: 'center', marginBottom: '20px', fontWeight: 'bold' }}
         >
           <Typography variant="h3" component="h1" gutterBottom>
-            New Goal
+            New Task
           </Typography>
         </Box>
-        <Box component="form" action={createGoal} noValidate>
+        <Box component="form" action={createTask} noValidate>
           <Box sx={{ marginBottom: '20px' }}>
             <TextField
               variant="outlined"
-              name="goalName"
-              id="goalName"
+              name="taskName"
+              id="taskName"
               type="text"
-              label="Goal Name"
-              placeholder="Enter goal's name"
+              label="Task Name"
+              placeholder="Enter task's name"
               required
               fullWidth
               sx={{ marginTop: '10px' }}
@@ -94,11 +95,35 @@ export const NewGoal = () => {
           <Box sx={{ marginBottom: '20px' }}>
             <TextField
               variant="outlined"
-              name="goalDescription"
-              id="goalDescription"
+              name="taskDescription"
+              id="taskDescription"
               type="text"
               label="Description (optional)"
               placeholder="Enter a Description"
+              fullWidth
+              sx={{ marginTop: '10px' }}
+            />
+          </Box>
+          <Box sx={{ marginBottom: '20px' }}>
+            <TextField
+              variant="outlined"
+              name="taskPirority"
+              id="taskPirority"
+              type="text"
+              label="Pirority (optional)"
+              placeholder="Enter a Pirority"
+              fullWidth
+              sx={{ marginTop: '10px' }}
+            />
+          </Box>
+          <Box sx={{ marginBottom: '20px' }}>
+            <TextField
+              variant="outlined"
+              name="taskLabel"
+              id="taskLabel"
+              type="text"
+              label="Label (optional)"
+              placeholder="Enter a Label"
               fullWidth
               sx={{ marginTop: '10px' }}
             />
@@ -117,7 +142,7 @@ export const NewGoal = () => {
             />
           </Box>
           <Button type="submit" variant="contained" color="primary" fullWidth>
-            Create goal
+            Create task
           </Button>
         </Box>
       </Card>

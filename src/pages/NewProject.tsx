@@ -9,10 +9,9 @@ export const NewProject = () => {
     const description = formData.get('projectDescription');
     const category = formData.get('projectCategory');
     const image = formData.get('projectImage');
-    const duedate = formData.get('dueDate');
+    const dueDate = formData.get('dueDate');
 
-    console.log(typeof duedate);
-    
+    console.log(typeof dueDate);
 
     if (!name) {
       console.error('All fields are required');
@@ -24,23 +23,29 @@ export const NewProject = () => {
         import.meta.env.VITE_SERVER_URL + '/project/create',
         {
           method: 'POST',
-          body: JSON.stringify({ name, description, category, image, duedate }),
+          body: JSON.stringify({ name, description, category, image, dueDate }),
           headers: {
             'Content-Type': 'application/json',
           },
+          credentials: 'include',
         }
       );
 
       console.log('Response:', response);
 
+      const data = await response.json();
+
       if (!response.ok) {
-        throw new Error('Failed to create project');
+        let message = '';
+        for (const error of data.errors) {
+          message += error.constraints.isNotEmpty + '\n';
+        }
+        throw new Error(message);
       }
 
-      const data = await response.json();
       console.log('Project created successfully:', data);
     } catch (error) {
-      console.error('Error during project creation:', error);
+      console.error(error);
     }
   };
 

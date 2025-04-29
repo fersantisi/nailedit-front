@@ -21,7 +21,7 @@ export const Register = () => {
     }
 
     try {
-      const response = await fetch(import.meta.env.VITE_SERVER_URL + '/auth/register', {
+      const response = await fetch(import.meta.env.VITE_SERVER_URL + '/auth/signin', {
         method: 'POST',
         body: JSON.stringify({ name, email, password }),
         headers: {

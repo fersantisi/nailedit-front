@@ -1,11 +1,12 @@
 import { AppBar, Box, Typography } from '@mui/material';
 import { NavbarItem } from './navbaritem';
+import { User } from '../../types';
 
 interface NavbarProps {
-  isLoggedIn: boolean;
+  user: User | null;
 }
 
-export const Navbar = ({ isLoggedIn }: NavbarProps) => {
+export const Navbar = ({ user }: NavbarProps) => {
   return (
     <Box sx={{ flexGrow: 1 }}>
       <AppBar
@@ -34,7 +35,7 @@ export const Navbar = ({ isLoggedIn }: NavbarProps) => {
               </Typography>
             </NavbarItem>
           </Box>
-          {isLoggedIn ? (
+          {user ? (
             <>
               <NavbarItem to="/project/list">
                 <Typography variant="h6" component="div">
@@ -62,11 +63,11 @@ export const Navbar = ({ isLoggedIn }: NavbarProps) => {
           )}
         </Box>
         <Box sx={{ display: 'flex', gap: '20px' }}>
-          {isLoggedIn ? (
+          {user ? (
             <>
               <NavbarItem to="/user/profile">
                 <Typography variant="h6" component="div">
-                  My profile
+                  {user.username}
                 </Typography>
               </NavbarItem>
               <NavbarItem to="/logout">

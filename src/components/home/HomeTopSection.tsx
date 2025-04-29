@@ -15,43 +15,19 @@ export const HomeTopSection = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  const mockProjects: Project[] = [
-    {
-      id: 1,
-      name: 'Project Alpha',
-      description: 'Description of Project Alpha',
-    },
-    { id: 2, name: 'Project Beta', description: 'Description of Project Beta' },
-    {
-      id: 3,
-      name: 'Project Gamma',
-      description: 'Description of Project Gamma',
-    },
-    {
-      id: 4,
-      name: 'Project Delta',
-      description: 'Description of Project Delta',
-    },
-    {
-      id: 5,
-      name: 'Project Epsilon',
-      description: 'Description of Project Epsilon',
-    },
-    { id: 6, name: 'Project Zeta', description: 'Description of Project Zeta' },
-  ];
-
-  /* useEffect(() => {
+  useEffect(() => {
     async function fetchProjects() {
       try {
-        const token = localStorage.getItem('token');
-
-        const response = await fetch('/api/projects', {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-        });
+        const response = await fetch(
+          import.meta.env.VITE_SERVER_URL + '/project/list',
+          {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            credentials: 'include',
+          }
+        );
 
         if (!response.ok) {
           throw new Error('Failed to fetch projects');
@@ -66,14 +42,12 @@ export const HomeTopSection = () => {
       }
     }
     fetchProjects();
-  }, []); */
+  }, []);
 
   useEffect(() => {
     async function fetchProjects() {
       try {
-        // Simulate network delay
-        await new Promise((resolve) => setTimeout(resolve, 500));
-        setProjects(mockProjects);
+        setProjects(projects);
       } catch (err) {
         setError((err as Error).message);
       } finally {
@@ -113,10 +87,13 @@ export const HomeTopSection = () => {
           pb: '10px',
         }}
       >
-        {projects.map(
-          (project: Project, index: number) =>
-            index < 5 && <HomeProjectCard project={project} />
-        )}
+        {projects.map((project: Project, index: number) => {
+          if (index < 5) {
+            console.log(project);
+            return <HomeProjectCard key={project.id} project={project} />;
+          }
+          return null;
+        })}
         {projects.length > 5 ? (
           <HomeMoreButton edge="100px" fontSize="20px" iconSize="50px" />
         ) : null}

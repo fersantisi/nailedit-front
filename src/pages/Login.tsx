@@ -2,8 +2,11 @@ import Typography from '@mui/material/Typography';
 import { Card } from '../components/ui/card';
 import { Box, Button } from '@mui/material';
 import { TextField } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
+
 
 export const Login = () => {
+  const navigate = useNavigate();
   const login = async (formData: FormData) => {
     const username = formData.get('username');
     const password = formData.get('password');
@@ -14,15 +17,26 @@ export const Login = () => {
     }
 
     try {
-      const response = await fetch(import.meta.env.VITE_SERVER_URL + '/auth/login', {
-        method: 'POST',
-        body: JSON.stringify({ username, password }),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+      const response = await fetch(
+        import.meta.env.VITE_SERVER_URL + '/auth/login',
+        {
+          method: 'POST',
+          body: JSON.stringify({ username, password }),
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+        }
+      );
 
       console.log('Response:', response);
+
+      if (response.ok) {
+        navigate('/');
+      } else {
+        console.error(response);
+        console.error('Login failed');
+      }
 
       if (!response.ok) {
         throw new Error('Failed to login');
