@@ -12,6 +12,8 @@ import { PasswordRecovery } from './pages/PasswordRecovery';
 import { PasswordReset } from './pages/PasswordReset';
 import { Project } from './pages/Project';
 import { EditProject } from './pages/EditProject';
+import { EditGoal } from './pages/EditGoal';
+import { EditTask } from './pages/EditTask';
 
 const theme = createTheme({
   palette: {
@@ -80,6 +82,14 @@ function App() {
           <Route path="/project/:id/edit" element={<EditProject />} />
           <Route path="/project/create" element={<NewProject />} />
           <Route path="/project/:id/goal/create" element={<NewGoal />} />
+          <Route
+            path="/project/:id/goal/:goalId/edit"
+            element={<EditGoal />}
+          />
+          <Route
+            path="/project/:id/goal/:goalId/task/:taskId/edit"
+            element={<EditTask />}
+          />
           <Route
             path="/project/:id/goal/:goalId/task/create"
             element={<NewTask />}

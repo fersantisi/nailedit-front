@@ -1,63 +1,66 @@
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Box, Button, TextField, Typography } from '@mui/material';
 import { Card } from '../components/ui/card';
 
-export const EditProject = () => {
-  const { id } = useParams<{ id: string }>();
+export const EditTask = () => {
   const navigate = useNavigate();
+  const { id, goalId, taskId } = useParams<{
+    id: string;
+    goalId: string;
+    taskId: string;
+  }>();
 
-  const [projectData, setProjectData] = useState({
+  const [taskData, setTaskData] = useState({
     name: '',
     description: '',
-    category: '',
-    image: '',
+    label: '',
     dueDate: '',
   });
 
   useEffect(() => {
-    const fetchProject = async () => {
+    const fetchTask = async () => {
       try {
         const response = await fetch(
-          `${import.meta.env.VITE_SERVER_URL}/project/${id}`,
-          {
-            credentials: 'include',
-          }
+          `${import.meta.env.VITE_SERVER_URL}/project/${id}/goal/${goalId}/task/${taskId}`,
+          { credentials: 'include' }
         );
+        console.log('Response:', response);
+        
         const data = await response.json();
-        setProjectData({
+        setTaskData({
           name: data.name || '',
           description: data.description || '',
-          category: data.category || '',
-          image: data.image || '',
+          label: data.label || '',
           dueDate: data.dueDate?.substring(0, 10) || '',
         });
+        console.log('Task data:', data);
+        
       } catch (error) {
-        console.error('Failed to fetch project:', error);
+        console.error('Failed to fetch task:', error);
       }
     };
 
-    fetchProject();
-  }, [id]);
+    fetchTask();
+  }, [id, goalId, taskId]);
 
-  const createProject = async (formData: FormData) => {
-    const name = formData.get('projectName');
-    const description = formData.get('projectDescription');
-    const category = formData.get('projectCategory');
-    const image = formData.get('projectImage');
+  const updateTask = async (formData: FormData) => {
+    const name = formData.get('taskName');
+    const description = formData.get('taskDescription');
+    const label = formData.get('taskLabel');
     const dueDate = formData.get('dueDate');
 
     if (!name) {
-      console.error('All fields are required');
+      console.error('Task name is required');
       return;
     }
 
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_SERVER_URL}/project/${id}/updateProject`, // or `/project/${id}` for PUT
+        `${import.meta.env.VITE_SERVER_URL}/project/${id}/goal/${goalId}/task/${taskId}/updateTask`,
         {
           method: 'PUT',
-          body: JSON.stringify({ name, description, category, image, dueDate }),
+          body: JSON.stringify({ name, description, label, dueDate }),
           headers: {
             'Content-Type': 'application/json',
           },
@@ -65,19 +68,15 @@ export const EditProject = () => {
         }
       );
 
-      const data = await response.json();
-
       if (!response.ok) {
-        let message = '';
-        for (const error of data.errors) {
-          message += error.constraints.isNotEmpty + '\n';
-        }
-        throw new Error(message);
+        throw new Error('Failed to update task');
       }
 
-      navigate('/');
+      const data = await response.json();
+      console.log('Task updated successfully:', data);
+      navigate(`/project/${id}`);
     } catch (error) {
-      console.error(error);
+      console.error('Error during task update:', error);
     }
   };
 
@@ -86,7 +85,14 @@ export const EditProject = () => {
       <Button
         variant="contained"
         color="primary"
-        sx={{ position: 'absolute', top: '20px', left: '20px', zIndex: 1 }}
+        sx={{
+          position: 'absolute',
+          top: '20px',
+          left: '20px',
+          zIndex: 1,
+          backgroundColor: 'primary.main',
+          '&:hover': { backgroundColor: 'primary.dark' },
+        }}
         onClick={() => navigate('/')}
       >
         Back to Home
@@ -104,19 +110,19 @@ export const EditProject = () => {
           sx={{ textAlign: 'center', marginBottom: '20px', fontWeight: 'bold' }}
         >
           <Typography variant="h3" component="h1" gutterBottom>
-            Edit Project
+            Edit Task
           </Typography>
         </Box>
-        <Box component="form" action={createProject} noValidate>
+        <Box component="form" action={updateTask} noValidate>
           <Box sx={{ marginBottom: '20px' }}>
             <TextField
               variant="outlined"
-              name="projectName"
-              id="projectName"
+              name="taskName"
+              id="taskName"
               type="text"
-              label="Project Name"
-              placeholder="Enter project's name"
-              defaultValue={projectData.name}
+              label="Task Name"
+              placeholder="Enter task's name"
+              defaultValue={taskData.name}
               required
               fullWidth
               sx={{ marginTop: '10px' }}
@@ -125,12 +131,12 @@ export const EditProject = () => {
           <Box sx={{ marginBottom: '20px' }}>
             <TextField
               variant="outlined"
-              name="projectDescription"
-              id="projectDescription"
+              name="taskDescription"
+              id="taskDescription"
               type="text"
               label="Description (optional)"
               placeholder="Enter a Description"
-              defaultValue={projectData.description}
+              defaultValue={taskData.description}
               fullWidth
               sx={{ marginTop: '10px' }}
             />
@@ -138,25 +144,12 @@ export const EditProject = () => {
           <Box sx={{ marginBottom: '20px' }}>
             <TextField
               variant="outlined"
-              name="projectCategory"
-              id="projectCategory"
+              name="taskLabel"
+              id="taskLabel"
               type="text"
-              label="Category (optional)"
-              placeholder="Enter a category"
-              defaultValue={projectData.category}
-              fullWidth
-              sx={{ marginTop: '10px' }}
-            />
-          </Box>
-          <Box sx={{ marginBottom: '20px' }}>
-            <TextField
-              variant="outlined"
-              name="projectImage"
-              id="projectImage"
-              type="text"
-              label="Image (optional)"
-              placeholder="Upload an image"
-              defaultValue={projectData.image}
+              label="Label (optional)"
+              placeholder="Enter a Label"
+              defaultValue={taskData.label}
               fullWidth
               sx={{ marginTop: '10px' }}
             />
@@ -168,8 +161,7 @@ export const EditProject = () => {
               id="dueDate"
               type="date"
               label="Due Date (optional)"
-              placeholder="Enter a due date"
-              defaultValue={projectData.dueDate}
+              defaultValue={taskData.dueDate}
               fullWidth
               sx={{ marginTop: '10px' }}
               InputLabelProps={{ shrink: true }}

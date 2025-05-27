@@ -91,10 +91,7 @@ export const Project = () => {
 
   return (
     <>
-      <Link
-        href={`/project/${id}/edit`}
-        style={{ textDecoration: 'none' }}
-      >
+      <Link href={`/project/${id}/edit`} style={{ textDecoration: 'none' }}>
         <HomeTitle title="Edit project" fontSize="30px" />
       </Link>
       <Link
@@ -120,12 +117,28 @@ export const Project = () => {
               <Box key={goal.id}>
                 <h2>Goal: {goal.name}</h2>
                 <p>Description: {goal.description}</p>
+                <Link
+                  href={`/project/${id}/goal/${goal.id}/edit`}
+                  style={{ textDecoration: 'none' }}
+                >
+                  <HomeTitle title="Edit goal" fontSize="30px" />
+                </Link>
                 <DeleteGoal goalId={goal.id} projectId={id} />
                 <ul>
                   {goal.tasks?.map((task) => (
                     <li key={task.id}>
                       Task: {task.name}
-                      <DeleteTask goalId={goal.id} projectId={id} taskId={task.id} />
+                      <Link
+                        href={`/project/${id}/goal/${goal.id}/task/${task.id}/edit`}
+                        style={{ textDecoration: 'none' }}
+                      >
+                        <HomeTitle title="Edit task" fontSize="30px" />
+                      </Link>
+                      <DeleteTask
+                        goalId={goal.id}
+                        projectId={id}
+                        taskId={task.id}
+                      />
                     </li>
                   ))}
                 </ul>
