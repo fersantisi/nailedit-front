@@ -21,7 +21,7 @@ export const Navbar = ({ user }: NavbarProps) => {
         <Box sx={{ display: 'flex', gap: '20px' }}>
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
             <img
-              src="src/assets/nailedit.svg"
+              src="/assets/nailedit.svg"
               style={{
                 width: '50px',
                 height: '50px',

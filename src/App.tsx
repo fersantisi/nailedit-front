@@ -14,6 +14,8 @@ import { Project } from './pages/Project';
 import { EditProject } from './pages/EditProject';
 import { EditGoal } from './pages/EditGoal';
 import { EditTask } from './pages/EditTask';
+import { AdminUsers } from './pages/AdminUsers';
+import { AdminRoute } from './components/admin/AdminRoute';
 
 const theme = createTheme({
   palette: {
@@ -82,10 +84,7 @@ function App() {
           <Route path="/project/:id/edit" element={<EditProject />} />
           <Route path="/project/create" element={<NewProject />} />
           <Route path="/project/:id/goal/create" element={<NewGoal />} />
-          <Route
-            path="/project/:id/goal/:goalId/edit"
-            element={<EditGoal />}
-          />
+          <Route path="/project/:id/goal/:goalId/edit" element={<EditGoal />} />
           <Route
             path="/project/:id/goal/:goalId/task/:taskId/edit"
             element={<EditTask />}
@@ -95,6 +94,14 @@ function App() {
             element={<NewTask />}
           />
           <Route path="/logout" element={<Logout />} />
+          <Route
+            path="/admin/users"
+            element={
+              <AdminRoute>
+                <AdminUsers />
+              </AdminRoute>
+            }
+          />
         </Routes>
       </ThemeProvider>
     </Box>

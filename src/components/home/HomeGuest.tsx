@@ -18,7 +18,7 @@ export const HomeGuest = () => {
     >
       <Box
         component="img"
-        src="src/assets/nailedit.svg"
+        src="public/assets/nailedit.svg"
         sx={{
           width: { xs: '120px', sm: '180px' },
           height: 'auto',
