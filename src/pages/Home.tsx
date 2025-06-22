@@ -1,4 +1,4 @@
-import { Box } from '@mui/material';
+import { Box, Container } from '@mui/material';
 import { Navbar } from '../components/ui/navbar';
 import { HomeTopSection } from '../components/home/HomeTopSection';
 import { HomeBottomSection } from '../components/home/HomeBottomSection';
@@ -8,6 +8,7 @@ import { User } from '../types';
 
 export const Home = () => {
   const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -27,9 +28,9 @@ export const Home = () => {
 
         const meData = await meResponse.json();
         console.log('meData', meData);
-        
+
         const userId = meData.userId;
-        
+
         const profileResponse = await fetch(
           import.meta.env.VITE_SERVER_URL + `/users/profile/${userId}`,
           {
@@ -47,33 +48,50 @@ export const Home = () => {
       } catch (error) {
         console.error('Error fetching user:', error);
         setUser(null);
+      } finally {
+        setLoading(false);
       }
     };
     fetchUser();
   }, []);
 
+  if (loading) {
+    return (
+      <Box
+        sx={{
+          height: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        Loading...
+      </Box>
+    );
+  }
+
   return (
     <>
+      <Navbar user={user} />
       {user ? (
-        <Box
+        <Container
+          maxWidth={false}
           sx={{
-            height: '100vh',
+            minHeight: '100vh',
             display: 'flex',
             flexDirection: 'column',
-            pt: '170px',
-            px: '15px',
-            width: '100%',
-            gap: '20px',
-            overflow: 'hidden',
+            pt: { xs: '160px', sm: '180px', md: '200px' },
+            pb: '80px',
+            px: { xs: 2, sm: 3, md: 4 },
+            gap: 3,
           }}
         >
           <HomeTopSection />
           <HomeBottomSection />
-        </Box>
+        </Container>
       ) : (
         <HomeGuest />
       )}
-      <Navbar user={user} />
     </>
   );
 };

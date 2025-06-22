@@ -14,8 +14,18 @@ export type Goal = {
 export type Task = {
   id: number;
   goalId: number;
+  projectId: number;
   name: string;
   description: string;
   label: string;
   dueDate: string;
+};
+
+export type Resource = {
+  id: number;
+  name: string;
+  project: string;
+  amount: number;
+  stock: number;
+  category: string;
 };

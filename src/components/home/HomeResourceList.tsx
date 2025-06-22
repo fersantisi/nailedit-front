@@ -1,81 +1,61 @@
-import { Box, Divider } from '@mui/material';
+import { Box, Divider, Typography } from '@mui/material';
 import { HomeResourceItem } from './HomeResourceItem';
 import { Card } from '../ui/card';
+import { Resource } from '../../types';
 
-export const HomeResourceList = () => {
-  return (
-    <>
+interface HomeResourceListProps {
+  resources: Resource[];
+  emptyMessage: string;
+}
+
+export const HomeResourceList = ({
+  resources,
+  emptyMessage,
+}: HomeResourceListProps) => {
+  if (resources.length === 0) {
+    return (
       <Box
         sx={{
           display: 'flex',
-          flexDirection: 'row',
-          justifyContent: 'space-evenly',
-          justifySelf: 'center',
-          alignItems: 'space-evenly',
-          flexWrap: 'wrap',
-          width: '90%',
-        }}
-      >
-        <HomeResourceItem
-          title="Item"
-          project="Project"
-          amount="Amount Required"
-        />
-      </Box>
-      <Card
-        variant="outlined"
-        sx={{
-          width: '90%',
-          margin: '10px',
-          padding: '10px',
-          backgroundColor: 'primary.main',
-          height: '20%',
-          display: 'flex',
-          justifyContent: 'start',
-          justifySelf: 'center',
-          alignSelf: 'center',
           alignItems: 'center',
-          gap: '5px',
-          overflow: 'auto',
+          justifyContent: 'center',
+          minHeight: '100px',
+          p: 2,
         }}
       >
-        {[
-          'Nails',
-          'Bolts',
-          'Screws',
-          'Clips',
-          'Washers',
-          'Nuts',
-          'Anchors',
-          'Pins',
-          'Rivets',
-          'Staples',
-        ].map((item, index, arr) => (
-          <>
-            <Box
-              key={index}
-              sx={{
-                display: 'flex',
-                flexDirection: 'row',
-                justifyContent: 'space-evenly',
-                justifySelf: 'center',
-                alignItems: 'space-evenly',
-                flexWrap: 'wrap',
-                width: '100%',
-              }}
-            >
-              <HomeResourceItem
-                title={item}
-                project={'Project ' + (index + 1)}
-                amount={(index + 1) * 10}
-              />
-            </Box>
-            {index < arr.length - 1 && (
-              <Divider flexItem sx={{ bgcolor: 'text.primary', mx: 2 }} />
-            )}
-          </>
-        ))}
-      </Card>
-    </>
+        <Typography variant="body2" sx={{ opacity: 0.7 }}>
+          {emptyMessage}
+        </Typography>
+      </Box>
+    );
+  }
+
+  return (
+    <Card
+      variant="outlined"
+      sx={{
+        width: '100%',
+        padding: 2,
+        backgroundColor: 'primary.main',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 1,
+        maxHeight: '200px',
+        overflow: 'auto',
+      }}
+    >
+      {resources.map((resource, index) => (
+        <Box key={resource.id}>
+          <HomeResourceItem
+            title={resource.name}
+            project={resource.project}
+            amount={`${resource.stock}/${resource.amount}`}
+          />
+          {index < resources.length - 1 && (
+            <Divider sx={{ bgcolor: 'text.primary', my: 1 }} />
+          )}
+        </Box>
+      ))}
+    </Card>
   );
 };

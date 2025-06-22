@@ -1,36 +1,150 @@
-import { Divider } from '@mui/material';
-import { Card } from '../ui/card';
+import {
+  Card,
+  CardContent,
+  Typography,
+  Box,
+  Chip,
+  CardActionArea,
+} from '@mui/material';
+import {
+  Assignment as TaskIcon,
+  CalendarToday as CalendarIcon,
+  Flag as PriorityIcon,
+  Folder as ProjectIcon,
+} from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom';
+import { Task } from '../../types';
+import { formatDate, getPriorityColor } from '../../utils/dateUtils';
 
 interface HomeTaskCardProps {
-  name: number;
+  task: Task & {
+    projectName?: string;
+    projectId?: number;
+  };
 }
 
-export const HomeTaskCard = ({ name }: HomeTaskCardProps) => {
+export const HomeTaskCard = ({ task }: HomeTaskCardProps) => {
+  const navigate = useNavigate();
+
+  const handleClick = () => {
+    // Navigate to the project page where the task belongs
+    if (task.projectId) {
+      navigate(`/project/${task.projectId}`);
+    } else {
+      navigate('/');
+    }
+  };
+
   return (
     <Card
-      key={name}
       variant="outlined"
       sx={{
-        width: '12%',
-        margin: '10px',
-        padding: '20px',
-        backgroundColor: 'primary.main',
-        height: '70%',
+        height: '100%',
         display: 'flex',
-        justifyContent: 'center',
-        alignSelf: 'center',
-        alignItems: 'center',
-        gap: '5px',
-        overflow: 'auto',
+        flexDirection: 'column',
+        transition: 'all 0.2s ease-in-out',
+        '&:hover': {
+          transform: 'translateY(-2px)',
+          boxShadow: 3,
+          borderColor: 'primary.main',
+        },
+        cursor: 'pointer',
       }}
     >
-      {'Project ' + (name + 1)}
-      <Divider sx={{ bgcolor: 'text.primary' }} flexItem />
-      Task
-      <Divider sx={{ bgcolor: 'text.primary' }} flexItem />
-      Due date
-      <Divider sx={{ bgcolor: 'text.primary' }} flexItem />
-      Description
+      <CardActionArea
+        onClick={handleClick}
+        sx={{
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'stretch',
+          p: 0,
+        }}
+      >
+        <CardContent sx={{ flexGrow: 1, p: 1.5 }}>
+          {/* Project Name */}
+          {task.projectName && (
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+              <ProjectIcon color="action" sx={{ mr: 0.5, fontSize: '1rem' }} />
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                  fontWeight: 'medium',
+                }}
+              >
+                {task.projectName}
+              </Typography>
+            </Box>
+          )}
+
+          {/* Task Name */}
+          <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 1 }}>
+            <TaskIcon
+              color="primary"
+              sx={{ mr: 0.5, mt: 0.25, fontSize: '1rem' }}
+            />
+            <Typography
+              variant="body2"
+              component="h4"
+              sx={{
+                fontWeight: 'bold',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                flex: 1,
+                fontSize: '0.875rem',
+              }}
+            >
+              {task.name}
+            </Typography>
+          </Box>
+
+          {/* Description */}
+          {task.description && (
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{
+                mb: 1.5,
+                display: '-webkit-box',
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: 'vertical',
+                overflow: 'hidden',
+                lineHeight: 1.3,
+                fontSize: '0.75rem',
+              }}
+            >
+              {task.description}
+            </Typography>
+          )}
+
+          {/* Chips */}
+          <Box sx={{ mt: 'auto', display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+            <Chip
+              icon={<PriorityIcon />}
+              label={task.label}
+              size="small"
+              color={getPriorityColor(task.label) as any}
+              variant="outlined"
+              sx={{ fontSize: '0.7rem', height: '20px' }}
+            />
+            {task.dueDate && (
+              <Chip
+                icon={<CalendarIcon />}
+                label={formatDate(task.dueDate)}
+                size="small"
+                color="secondary"
+                variant="outlined"
+                sx={{ fontSize: '0.7rem', height: '20px' }}
+              />
+            )}
+          </Box>
+        </CardContent>
+      </CardActionArea>
     </Card>
   );
 };

@@ -1,4 +1,12 @@
-import { Box } from '@mui/material';
+import {
+  Box,
+  CircularProgress,
+  Alert,
+  Typography,
+  Button,
+} from '@mui/material';
+import { Add as AddIcon } from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom';
 import { HomeTitle } from './HomeTitle';
 import { HomeProjectCard } from './HomeProjectCard';
 import { HomeMoreButton } from './HomeMoreButton';
@@ -8,16 +16,22 @@ interface Project {
   id: number;
   name: string;
   description: string;
+  category?: string;
+  dueDate?: string;
 }
 
 export const HomeTopSection = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     async function fetchProjects() {
       try {
+        setLoading(true);
+        setError(null);
+
         const response = await fetch(
           import.meta.env.VITE_SERVER_URL + '/project/list',
           {
@@ -41,24 +55,42 @@ export const HomeTopSection = () => {
         setLoading(false);
       }
     }
-    fetchProjects();
-  }, []);
-
-  useEffect(() => {
-    async function fetchProjects() {
-      try {
-        setProjects(projects);
-      } catch (err) {
-        setError((err as Error).message);
-      } finally {
-        setLoading(false);
-      }
-    }
 
     fetchProjects();
   }, []);
 
-  if (loading) return <div>Loading projects...</div>;
+  if (loading) {
+    return (
+      <Box
+        sx={{
+          flex: 1,
+          backgroundColor: 'secondary.main',
+          borderRadius: '10px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '300px',
+        }}
+      >
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Box
+        sx={{
+          flex: 1,
+          backgroundColor: 'secondary.main',
+          borderRadius: '10px',
+          p: 2,
+        }}
+      >
+        <Alert severity="error">{error}</Alert>
+      </Box>
+    );
+  }
 
   return (
     <Box
@@ -67,39 +99,88 @@ export const HomeTopSection = () => {
         backgroundColor: 'secondary.main',
         display: 'flex',
         flexDirection: 'column',
-        justifyContent: 'space-between',
         borderRadius: '10px',
-        flexWrap: 'wrap',
-        minHeight: 0,
+        p: 3,
+        minHeight: '300px',
       }}
     >
-      <HomeTitle title="Projects" fontSize="30px" />
       <Box
         sx={{
           display: 'flex',
-          flexDirection: 'row',
-          justifyContent: 'space-evenly',
-          alignItems: 'space-evenly',
-          flexWrap: 'wrap',
-          width: '100%',
-          gap: '20px',
-          height: '80%',
-          pb: '10px',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          mb: 3,
         }}
       >
-        {projects.map((project: Project, index: number) => {
-          if (index < 5) {
-            return <HomeProjectCard key={project.id} project={project} />;
-          }
-          return null;
-        })}
-        {projects.length > 5 ? (
-          <HomeMoreButton edge="100px" fontSize="20px" iconSize="50px" />
-        ) : null}
-        {projects.length === 0 || error ? (
-          <HomeTitle title="No projects available" fontSize="20px" />
-        ) : null}
+        <HomeTitle title="Projects" fontSize="30px" />
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={() => navigate('/project/create')}
+          sx={{ minWidth: 'fit-content' }}
+        >
+          New Project
+        </Button>
       </Box>
+
+      {projects.length === 0 ? (
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flex: 1,
+            textAlign: 'center',
+            gap: 2,
+          }}
+        >
+          <Typography variant="h6" color="text.secondary">
+            No projects yet
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Create your first project to get started
+          </Typography>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => navigate('/project/create')}
+          >
+            Create First Project
+          </Button>
+        </Box>
+      ) : (
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: {
+              xs: '1fr',
+              sm: 'repeat(2, 1fr)',
+              md: 'repeat(3, 1fr)',
+              lg: 'repeat(4, 1fr)',
+            },
+            gap: 3,
+            flex: 1,
+          }}
+        >
+          {projects.slice(0, 8).map((project: Project) => (
+            <Box key={project.id} sx={{ minHeight: '200px' }}>
+              <HomeProjectCard project={project} />
+            </Box>
+          ))}
+          {projects.length > 8 && (
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <HomeMoreButton edge="100px" fontSize="20px" iconSize="50px" />
+            </Box>
+          )}
+        </Box>
+      )}
     </Box>
   );
 };

@@ -1,26 +1,102 @@
-import { Box, Link } from '@mui/material';
+import {
+  Box,
+  Link,
+  Typography,
+  Button,
+  Container,
+  Grid,
+  Card,
+  CardContent,
+  CardActions,
+  Chip,
+  IconButton,
+  Divider,
+  CircularProgress,
+  Alert,
+  Fab,
+} from '@mui/material';
+import {
+  Add as AddIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+  Assignment as TaskIcon,
+  Flag as GoalIcon,
+  CalendarToday as CalendarIcon,
+  Note as NoteIcon,
+} from '@mui/icons-material';
 import { Navbar } from '../components/ui/navbar';
 import { useEffect, useState } from 'react';
-import { Goal, User } from '../types';
-import { useParams } from 'react-router-dom';
+import { Goal, User, Task } from '../types';
+import { useParams, useNavigate } from 'react-router-dom';
 import { HomeTitle } from '../components/home/HomeTitle';
-import { Card } from '../components/ui/card';
 import DeleteGoal from '../components/project/DeleteGoal';
 import DeleteTask from '../components/project/DeleteTask';
 import DeleteProject from '../components/project/DeleteProject';
+import { NotesModal } from '../components/project/NotesModal';
+import { ProjectHeader } from '../components/project/ProjectHeader';
+import { GoalsSection } from '../components/project/GoalsSection';
+import { formatDate, getPriorityColor } from '../utils/dateUtils';
 
 export const Project = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const [goals, setGoals] = useState<Goal[] | null>(null);
   const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [projectData, setProjectData] = useState<{
+    name: string;
+    description: string;
+    category: string;
+    dueDate: string;
+  } | null>(null);
+
+  // Notes modal state
+  const [notesModal, setNotesModal] = useState<{
+    open: boolean;
+    entityType: 'goal' | 'task';
+    entityId: number;
+    entityName: string;
+    goalId?: number;
+  }>({
+    open: false,
+    entityType: 'goal',
+    entityId: 0,
+    entityName: '',
+  });
+
+  const openNotesModal = (
+    entityType: 'goal' | 'task',
+    entityId: number,
+    entityName: string,
+    goalId?: number
+  ) => {
+    setNotesModal({
+      open: true,
+      entityType,
+      entityId,
+      entityName,
+      goalId,
+    });
+  };
+
+  const closeNotesModal = () => {
+    setNotesModal((prev) => ({ ...prev, open: false }));
+  };
 
   useEffect(() => {
     if (!id) {
-      console.error('Project ID is not defined');
+      setError('Project ID is not defined');
+      setLoading(false);
       return;
     }
-    const fetchUser = async () => {
+
+    const fetchData = async () => {
       try {
+        setLoading(true);
+        setError(null);
+
+        // Fetch user data
         const meResponse = await fetch(
           import.meta.env.VITE_SERVER_URL + '/users/me',
           {
@@ -31,16 +107,34 @@ export const Project = () => {
 
         if (!meResponse.ok) {
           setUser(null);
+          navigate('/login');
           return;
         }
 
         const meData = await meResponse.json();
-        console.log('meData', meData);
-
         setUser(meData);
 
-        console.log('ProjectId: ', id);
+        // Fetch project data
+        const projectResponse = await fetch(
+          import.meta.env.VITE_SERVER_URL + '/project/' + id,
+          {
+            method: 'GET',
+            credentials: 'include',
+          }
+        );
 
+        if (projectResponse.ok) {
+          const projectInfo = await projectResponse.json();
+          console.log('Project data:', projectInfo);
+          setProjectData({
+            name: projectInfo.name,
+            description: projectInfo.description,
+            category: projectInfo.category,
+            dueDate: projectInfo.dueDate,
+          });
+        }
+
+        // Fetch goals and tasks
         const goalsResponse = await fetch(
           import.meta.env.VITE_SERVER_URL + '/project/' + id + '/goals',
           {
@@ -51,6 +145,7 @@ export const Project = () => {
 
         if (goalsResponse.ok) {
           const goalsData = await goalsResponse.json();
+          console.log('Goals data:', goalsData);
           const goalsWithTasks = await Promise.all(
             goalsData.map(async (goal: Goal) => {
               const tasksResponse = await fetch(
@@ -68,95 +163,100 @@ export const Project = () => {
 
               if (tasksResponse.ok) {
                 const tasks = await tasksResponse.json();
+                console.log(`Tasks for goal ${goal.id}:`, tasks);
                 return { ...goal, tasks };
               }
-              console.log('Error fetching tasks for goal:', goal);
 
               return { ...goal, tasks: [] };
             })
           );
+          console.log('Final goals with tasks:', goalsWithTasks);
           setGoals(goalsWithTasks);
         } else {
-          setGoals(null);
+          setGoals([]);
         }
       } catch (error) {
-        console.error('Error fetching user or goals:', error);
+        console.error('Error fetching data:', error);
+        setError('Failed to load project data');
         setUser(null);
         setGoals(null);
+      } finally {
+        setLoading(false);
       }
     };
 
-    fetchUser();
-  }, [id]);
+    fetchData();
+  }, [id, navigate]);
+
+  if (loading) {
+    return (
+      <Box
+        sx={{
+          height: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <>
+        <Navbar user={user} />
+        <Container sx={{ pt: '120px', pb: '80px' }}>
+          <Alert severity="error">{error}</Alert>
+        </Container>
+      </>
+    );
+  }
 
   return (
     <>
-      <Link href={`/project/${id}/edit`} style={{ textDecoration: 'none' }}>
-        <HomeTitle title="Edit project" fontSize="30px" />
-      </Link>
-      <Link
-        href={`/project/${id}/goal/create`}
-        style={{ textDecoration: 'none' }}
-      >
-        <HomeTitle title="New goal" fontSize="30px" />
-      </Link>
-      <DeleteProject projectId={id} />
-
-      {goals?.length ? (
-        <Box
-          sx={{
-            pt: '170px',
-            px: '15px',
-            gap: '20px',
-            display: 'flex',
-            flexDirection: 'row',
-          }}
-        >
-          {goals.map((goal) => (
-            <Card>
-              <Box key={goal.id}>
-                <h2>Goal: {goal.name}</h2>
-                <p>Description: {goal.description}</p>
-                <Link
-                  href={`/project/${id}/goal/${goal.id}/edit`}
-                  style={{ textDecoration: 'none' }}
-                >
-                  <HomeTitle title="Edit goal" fontSize="30px" />
-                </Link>
-                <DeleteGoal goalId={goal.id} projectId={id} />
-                <ul>
-                  {goal.tasks?.map((task) => (
-                    <li key={task.id}>
-                      Task: {task.name}
-                      <Link
-                        href={`/project/${id}/goal/${goal.id}/task/${task.id}/edit`}
-                        style={{ textDecoration: 'none' }}
-                      >
-                        <HomeTitle title="Edit task" fontSize="30px" />
-                      </Link>
-                      <DeleteTask
-                        goalId={goal.id}
-                        projectId={id}
-                        taskId={task.id}
-                      />
-                    </li>
-                  ))}
-                </ul>
-                <Link
-                  href={`/project/${id}/goal/${goal.id}/task/create`}
-                  style={{ textDecoration: 'none' }}
-                >
-                  <HomeTitle title="New task" fontSize="30px" />
-                </Link>
-              </Box>
-            </Card>
-          ))}
-        </Box>
-      ) : (
-        <HomeTitle title="No goals set" fontSize="30px" />
-      )}
-
       <Navbar user={user} />
+      {console.log('Rendering with projectData:', projectData)}
+      {console.log('Rendering with goals:', goals)}
+      <Box
+        sx={{
+          height: '100vh',
+          display: 'flex',
+          flexDirection: 'column',
+          pt: '170px',
+          px: '15px',
+          width: '100%',
+          gap: '20px',
+          overflow: 'hidden',
+        }}
+      >
+        <ProjectHeader
+          projectId={id!}
+          projectData={projectData}
+          formatDate={formatDate}
+        />
+
+        {goals && (
+          <GoalsSection
+            goals={goals}
+            projectId={id!}
+            formatDate={formatDate}
+            getPriorityColor={getPriorityColor}
+            onOpenNotes={openNotesModal}
+          />
+        )}
+      </Box>
+
+      <NotesModal
+        open={notesModal.open}
+        onClose={closeNotesModal}
+        entityType={notesModal.entityType}
+        entityId={notesModal.entityId}
+        entityName={notesModal.entityName}
+        projectId={id!}
+        goalId={notesModal.goalId}
+      />
     </>
   );
 };
