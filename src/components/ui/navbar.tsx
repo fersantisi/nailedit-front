@@ -55,7 +55,7 @@ export const Navbar = ({ user }: NavbarProps) => {
         <Box sx={{ display: 'flex', gap: '20px' }}>
           {user ? (
             <>
-              <NavbarItem to="/user/profile">
+              <NavbarItem to="/profile">
                 <Typography variant="h6" component="div">
                   {user.username}
                 </Typography>

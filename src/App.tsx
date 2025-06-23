@@ -16,6 +16,7 @@ import { EditGoal } from './pages/EditGoal';
 import { EditTask } from './pages/EditTask';
 import { AdminUsers } from './pages/AdminUsers';
 import { AdminRoute } from './components/admin/AdminRoute';
+import { Profile } from './pages/Profile';
 
 const theme = createTheme({
   palette: {
@@ -80,6 +81,7 @@ function App() {
               </GuestRoute>
             }
           />
+          <Route path="/profile" element={<Profile />} />
           <Route path="/project/:id" element={<Project />} />
           <Route path="/project/:id/edit" element={<EditProject />} />
           <Route path="/project/create" element={<NewProject />} />
