@@ -1,36 +1,13 @@
 import {
   Box,
-  Link,
-  Typography,
-  Button,
   Container,
-  Grid,
-  Card,
-  CardContent,
-  CardActions,
-  Chip,
-  IconButton,
-  Divider,
   CircularProgress,
   Alert,
-  Fab,
 } from '@mui/material';
-import {
-  Add as AddIcon,
-  Edit as EditIcon,
-  Delete as DeleteIcon,
-  Assignment as TaskIcon,
-  Flag as GoalIcon,
-  CalendarToday as CalendarIcon,
-  Note as NoteIcon,
-} from '@mui/icons-material';
 import { Navbar } from '../components/ui/navbar';
 import { useEffect, useState } from 'react';
-import { Goal, User, Task } from '../types';
+import { Goal, User } from '../types';
 import { useParams, useNavigate } from 'react-router-dom';
-import DeleteGoal from '../components/project/DeleteGoal';
-import DeleteTask from '../components/project/DeleteTask';
-import DeleteProject from '../components/project/DeleteProject';
 import { NotesModal } from '../components/project/NotesModal';
 import { ProjectHeader } from '../components/project/ProjectHeader';
 import { GoalsSection } from '../components/project/GoalsSection';
