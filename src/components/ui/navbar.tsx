@@ -1,4 +1,4 @@
-import { AppBar, Box, Typography } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 import { NavbarItem } from './navbaritem';
 import { User } from '../../types';
 
@@ -8,14 +8,15 @@ interface NavbarProps {
 
 export const Navbar = ({ user }: NavbarProps) => {
   return (
-    <Box sx={{ flexGrow: 1 }}>
-      <AppBar
+    <Box sx={{ width: '100vw' }}>
+      <Box
         sx={{
           backgroundColor: '#4c4a52',
           display: 'flex',
           flexDirection: 'row',
           justifyContent: 'space-between',
           padding: '10px',
+          width: '100%',
         }}
       >
         <Box sx={{ display: 'flex', gap: '20px' }}>
@@ -42,9 +43,14 @@ export const Navbar = ({ user }: NavbarProps) => {
                   Projects
                 </Typography>
               </NavbarItem>
-              <NavbarItem to="/project/create">
+              <NavbarItem to="/calendar">
                 <Typography variant="h6" component="div">
-                  New Project
+                  Calendar
+                </Typography>
+              </NavbarItem>
+              <NavbarItem to="/gantt">
+                <Typography variant="h6" component="div">
+                  Gantt
                 </Typography>
               </NavbarItem>
             </>
@@ -52,7 +58,7 @@ export const Navbar = ({ user }: NavbarProps) => {
             <></>
           )}
         </Box>
-        <Box sx={{ display: 'flex', gap: '20px' }}>
+        <Box sx={{ display: 'flex', gap: '20px', pr: 3 }}>
           {user ? (
             <>
               <NavbarItem to="/profile">
@@ -81,7 +87,7 @@ export const Navbar = ({ user }: NavbarProps) => {
             </>
           )}
         </Box>
-      </AppBar>
+      </Box>
     </Box>
   );
 };

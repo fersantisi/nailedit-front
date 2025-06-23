@@ -1,10 +1,6 @@
-import Typography from '@mui/material/Typography';
 import { Card } from '../components/ui/card';
-import { Box, Button } from '@mui/material';
-import { TextField } from '@mui/material';
+import { Box, Button, Typography, TextField } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-
-
 
 export const PasswordRecovery = () => {
   const navigate = useNavigate();

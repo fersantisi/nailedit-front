@@ -73,6 +73,12 @@ export const TaskItem: React.FC<TaskItemProps> = ({
                 label={formatDate(task.dueDate)}
                 size="small"
                 variant="outlined"
+                sx={{
+                  pl: 1,
+                  '& .MuiChip-icon': {
+                    ml: 0.5,
+                  },
+                }}
               />
             )}
           </Box>

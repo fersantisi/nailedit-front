@@ -1,7 +1,5 @@
-import Typography from '@mui/material/Typography';
 import { Card } from '../components/ui/card';
-import { Box, Button } from '@mui/material';
-import { TextField } from '@mui/material';
+import { Box, Button, Typography, TextField, Alert } from '@mui/material';
 import { useNavigate, useParams } from 'react-router-dom';
 
 export const PasswordReset = () => {

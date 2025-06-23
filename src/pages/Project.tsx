@@ -28,7 +28,6 @@ import { Navbar } from '../components/ui/navbar';
 import { useEffect, useState } from 'react';
 import { Goal, User, Task } from '../types';
 import { useParams, useNavigate } from 'react-router-dom';
-import { HomeTitle } from '../components/home/HomeTitle';
 import DeleteGoal from '../components/project/DeleteGoal';
 import DeleteTask from '../components/project/DeleteTask';
 import DeleteProject from '../components/project/DeleteProject';
@@ -207,7 +206,7 @@ export const Project = () => {
     return (
       <>
         <Navbar user={user} />
-        <Container sx={{ pt: '120px', pb: '80px' }}>
+        <Container sx={{ pt: 3, pb: '80px' }}>
           <Alert severity="error">{error}</Alert>
         </Container>
       </>
@@ -221,14 +220,13 @@ export const Project = () => {
       {console.log('Rendering with goals:', goals)}
       <Box
         sx={{
-          height: '100vh',
+          minHeight: '100vh',
           display: 'flex',
           flexDirection: 'column',
-          pt: '170px',
+          pt: 3,
           px: '15px',
           width: '100%',
           gap: '20px',
-          overflow: 'hidden',
         }}
       >
         <ProjectHeader

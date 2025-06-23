@@ -139,7 +139,14 @@ export const HomeTaskCard = ({ task }: HomeTaskCardProps) => {
                 size="small"
                 color="secondary"
                 variant="outlined"
-                sx={{ fontSize: '0.7rem', height: '20px' }}
+                sx={{
+                  fontSize: '0.7rem',
+                  height: '20px',
+                  pl: 1,
+                  '& .MuiChip-icon': {
+                    ml: 0.5,
+                  },
+                }}
               />
             )}
           </Box>

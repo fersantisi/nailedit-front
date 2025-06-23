@@ -1,6 +1,12 @@
-import Typography from '@mui/material/Typography';
 import { Card } from '../components/ui/card';
-import { Box, Button, TextField, Alert, Snackbar } from '@mui/material';
+import {
+  Box,
+  Button,
+  TextField,
+  Alert,
+  Snackbar,
+  Typography,
+} from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { Navbar } from '../components/ui/navbar';
 import { useState, useEffect } from 'react';

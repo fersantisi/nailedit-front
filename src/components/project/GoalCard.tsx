@@ -103,7 +103,13 @@ export const GoalCard: React.FC<GoalCardProps> = ({
               label={`Due: ${formatDate(goal.dueDate)}`}
               size="small"
               variant="outlined"
-              sx={{ mb: 2 }}
+              sx={{
+                mb: 2,
+                pl: 1,
+                '& .MuiChip-icon': {
+                  ml: 0.5,
+                },
+              }}
             />
           )}
 

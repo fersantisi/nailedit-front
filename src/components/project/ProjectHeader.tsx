@@ -54,7 +54,8 @@ export const ProjectHeader: React.FC<ProjectHeaderProps> = ({
               <Chip
                 label={projectData.category}
                 color="primary"
-                variant="outlined"
+                variant="filled"
+                sx={{ fontWeight: 'bold' }}
               />
             )}
             {projectData?.dueDate && (
@@ -62,7 +63,14 @@ export const ProjectHeader: React.FC<ProjectHeaderProps> = ({
                 icon={<CalendarIcon />}
                 label={`Due: ${formatDate(projectData.dueDate)}`}
                 color="secondary"
-                variant="outlined"
+                variant="filled"
+                sx={{
+                  pl: 1,
+                  fontWeight: 'bold',
+                  '& .MuiChip-icon': {
+                    ml: 0.5,
+                  },
+                }}
               />
             )}
           </Box>

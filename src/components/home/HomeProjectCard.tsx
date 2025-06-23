@@ -106,6 +106,12 @@ export const HomeProjectCard = ({ project }: HomeProjectCardProps) => {
                 size="small"
                 color="secondary"
                 variant="outlined"
+                sx={{
+                  pl: 1,
+                  '& .MuiChip-icon': {
+                    ml: 0.5,
+                  },
+                }}
               />
             )}
           </Box>

@@ -1,12 +1,4 @@
-import {
-  Box,
-  CircularProgress,
-  Alert,
-  Typography,
-  Button,
-} from '@mui/material';
-import { Add as AddIcon } from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
+import { Box, CircularProgress, Alert, Typography } from '@mui/material';
 import { HomeMoreButton } from './HomeMoreButton';
 import { HomeTitle } from './HomeTitle';
 import { HomeTaskCard } from './HomeTaskCard';
@@ -21,7 +13,6 @@ export const HomeScheduleSection = () => {
   const [tasks, setTasks] = useState<TaskWithProject[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const navigate = useNavigate();
 
   useEffect(() => {
     async function fetchTasks() {

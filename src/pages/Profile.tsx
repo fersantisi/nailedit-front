@@ -12,7 +12,6 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  IconButton,
 } from '@mui/material';
 import {
   Person as PersonIcon,
@@ -166,14 +165,6 @@ export const Profile = () => {
     });
     setPasswordError(null);
     setPasswordSuccess(null);
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
   };
 
   if (loading) {

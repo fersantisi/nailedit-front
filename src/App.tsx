@@ -17,6 +17,9 @@ import { EditTask } from './pages/EditTask';
 import { AdminUsers } from './pages/AdminUsers';
 import { AdminRoute } from './components/admin/AdminRoute';
 import { Profile } from './pages/Profile';
+import { Calendar } from './pages/Calendar';
+import { ProjectList } from './pages/ProjectList';
+import { Gantt } from './pages/Gantt';
 
 const theme = createTheme({
   palette: {
@@ -40,10 +43,9 @@ function App() {
   return (
     <Box
       sx={{
-        height: '100vh',
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
+        minHeight: '100vh',
+        width: '100vw',
+        backgroundColor: '#2e2e2e',
       }}
     >
       <ThemeProvider theme={theme}>
@@ -82,6 +84,9 @@ function App() {
             }
           />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/calendar" element={<Calendar />} />
+          <Route path="/gantt" element={<Gantt />} />
+          <Route path="/project/list" element={<ProjectList />} />
           <Route path="/project/:id" element={<Project />} />
           <Route path="/project/:id/edit" element={<EditProject />} />
           <Route path="/project/create" element={<NewProject />} />

@@ -80,7 +80,7 @@ export const Home = () => {
             minHeight: '100vh',
             display: 'flex',
             flexDirection: 'column',
-            pt: { xs: '160px', sm: '180px', md: '200px' },
+            pt: { xs: 2, sm: 3, md: 4 },
             pb: '80px',
             px: { xs: 2, sm: 3, md: 4 },
             gap: 3,
