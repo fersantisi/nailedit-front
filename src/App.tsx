@@ -44,7 +44,7 @@ function App() {
     <Box
       sx={{
         minHeight: '100vh',
-        width: '100vw',
+        width: '100%',
         backgroundColor: '#2e2e2e',
       }}
     >

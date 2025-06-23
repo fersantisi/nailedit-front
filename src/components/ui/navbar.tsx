@@ -8,7 +8,7 @@ interface NavbarProps {
 
 export const Navbar = ({ user }: NavbarProps) => {
   return (
-    <Box sx={{ width: '100vw' }}>
+    <Box sx={{ width: '100%' }}>
       <Box
         sx={{
           backgroundColor: '#4c4a52',

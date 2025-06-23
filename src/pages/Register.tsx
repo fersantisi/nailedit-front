@@ -194,47 +194,48 @@ export const Register = () => {
 
   return (
     <>
+      <Navbar user={user} />
       <Box
         sx={{
-          height: '100vh',
+          height: 'calc(100vh - 70px)', // Account for navbar height
           display: 'flex',
           flexDirection: 'column',
-          pt: 4,
+          justifyContent: 'center',
+          alignItems: 'center',
           px: '15px',
           width: '100%',
-          gap: '20px',
           overflow: 'hidden',
+          overflowX: 'hidden',
         }}
       >
         <Card
           variant="outlined"
           sx={{
             width: '300px',
-            margin: 'auto',
-            padding: '20px',
+            padding: '16px',
             backgroundColor: 'secondary.main',
           }}
         >
           <Box
             sx={{
               textAlign: 'center',
-              marginBottom: '20px',
+              marginBottom: '12px',
               fontWeight: 'bold',
             }}
           >
-            <Typography variant="h3" component="h1" gutterBottom>
+            <Typography variant="h4" component="h1" gutterBottom>
               Register
             </Typography>
           </Box>
 
           {errorMessage && (
-            <Alert severity="error" sx={{ marginBottom: '20px' }}>
+            <Alert severity="error" sx={{ marginBottom: '12px' }}>
               {errorMessage}
             </Alert>
           )}
 
           <Box component="form" action={register} noValidate>
-            <Box sx={{ marginBottom: '20px' }}>
+            <Box sx={{ marginBottom: '12px' }}>
               <TextField
                 variant="outlined"
                 name="username"
@@ -248,10 +249,10 @@ export const Register = () => {
                 onChange={(e) => handleInputChange('username', e.target.value)}
                 error={!!fieldErrors.username}
                 helperText={fieldErrors.username}
-                sx={{ marginTop: '10px' }}
+                size="small"
               />
             </Box>
-            <Box sx={{ marginBottom: '20px' }}>
+            <Box sx={{ marginBottom: '12px' }}>
               <TextField
                 variant="outlined"
                 name="email"
@@ -265,10 +266,10 @@ export const Register = () => {
                 onChange={(e) => handleInputChange('email', e.target.value)}
                 error={!!fieldErrors.email}
                 helperText={fieldErrors.email}
-                sx={{ marginTop: '10px' }}
+                size="small"
               />
             </Box>
-            <Box sx={{ marginBottom: '20px' }}>
+            <Box sx={{ marginBottom: '12px' }}>
               <TextField
                 variant="outlined"
                 name="password"
@@ -282,10 +283,10 @@ export const Register = () => {
                 onChange={(e) => handleInputChange('password', e.target.value)}
                 error={!!fieldErrors.password}
                 helperText={fieldErrors.password}
-                sx={{ marginTop: '10px' }}
+                size="small"
               />
             </Box>
-            <Box sx={{ marginBottom: '20px' }}>
+            <Box sx={{ marginBottom: '12px' }}>
               <TextField
                 variant="outlined"
                 name="confirmPassword"
@@ -301,36 +302,37 @@ export const Register = () => {
                 }
                 error={!!fieldErrors.confirmPassword}
                 helperText={fieldErrors.confirmPassword}
-                sx={{ marginTop: '10px' }}
+                size="small"
               />
             </Box>
             <Button type="submit" variant="contained" color="primary" fullWidth>
               Register
             </Button>
           </Box>
+
+          <Box
+            sx={{
+              textAlign: 'center',
+              marginTop: '12px',
+              fontWeight: 'bold',
+            }}
+          >
+            <Typography variant="body2" component="p">
+              Already registered?{' '}
+              <Button
+                variant="text"
+                color="primary"
+                size="small"
+                onClick={() => {
+                  window.location.href = '/login';
+                }}
+              >
+                Log in
+              </Button>
+            </Typography>
+          </Box>
         </Card>
-        <Box
-          sx={{
-            textAlign: 'center',
-            marginTop: '20px',
-            fontWeight: 'bold',
-          }}
-        >
-          <Typography variant="body1" component="p">
-            Already registered?{' '}
-            <Button
-              variant="text"
-              color="primary"
-              onClick={() => {
-                window.location.href = '/login';
-              }}
-            >
-              Log in
-            </Button>
-          </Typography>
-        </Box>
       </Box>
-      <Navbar user={user} />
     </>
   );
 };

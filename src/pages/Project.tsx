@@ -111,7 +111,26 @@ export const Project = () => {
         }
 
         const meData = await meResponse.json();
-        setUser(meData);
+        console.log('meData', meData);
+
+        const userId = meData.userId;
+
+        const profileResponse = await fetch(
+          import.meta.env.VITE_SERVER_URL + `/users/profile/${userId}`,
+          {
+            method: 'GET',
+            credentials: 'include',
+          }
+        );
+
+        if (profileResponse.ok) {
+          const userData = await profileResponse.json();
+          setUser(userData);
+        } else {
+          setUser(null);
+          navigate('/login');
+          return;
+        }
 
         // Fetch project data
         const projectResponse = await fetch(

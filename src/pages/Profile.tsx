@@ -73,11 +73,12 @@ export const Profile = () => {
         }
 
         const meData = await meResponse.json();
-        setUser(meData);
+        console.log('meData', meData);
 
-        // Fetch profile data
+        const userId = meData.userId;
+
         const profileResponse = await fetch(
-          import.meta.env.VITE_SERVER_URL + '/users/profile',
+          import.meta.env.VITE_SERVER_URL + `/users/profile/${userId}`,
           {
             method: 'GET',
             credentials: 'include',
@@ -85,10 +86,12 @@ export const Profile = () => {
         );
 
         if (profileResponse.ok) {
-          const profile = await profileResponse.json();
-          setProfileData(profile);
+          const userData = await profileResponse.json();
+          setUser(userData);
         } else {
-          setError('Failed to load profile data');
+          setUser(null);
+          navigate('/login');
+          return;
         }
       } catch (error) {
         console.error('Error fetching profile:', error);

@@ -58,7 +58,26 @@ export const Calendar = () => {
         }
 
         const meData = await meResponse.json();
-        setUser(meData);
+        console.log('meData', meData);
+
+        const userId = meData.userId;
+
+        const profileResponse = await fetch(
+          import.meta.env.VITE_SERVER_URL + `/users/profile/${userId}`,
+          {
+            method: 'GET',
+            credentials: 'include',
+          }
+        );
+
+        if (profileResponse.ok) {
+          const userData = await profileResponse.json();
+          setUser(userData);
+        } else {
+          setUser(null);
+          navigate('/login');
+          return;
+        }
 
         // Fetch all data in parallel
         const [projectsResponse, goalsResponse, tasksResponse] =
@@ -312,7 +331,7 @@ export const Calendar = () => {
           variant="outlined"
           sx={{
             maxWidth: '1200px',
-            margin: 'auto',
+            margin: '0 auto',
             padding: '30px',
             backgroundColor: 'secondary.main',
             width: '100%',

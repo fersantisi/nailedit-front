@@ -51,6 +51,8 @@ export const NewProject = () => {
         }
 
         const meData = await meResponse.json();
+        console.log('meData', meData);
+
         const userId = meData.userId;
 
         const profileResponse = await fetch(
@@ -67,6 +69,7 @@ export const NewProject = () => {
         } else {
           setUser(null);
           navigate('/login');
+          return;
         }
       } catch (error) {
         console.error('Error fetching user:', error);

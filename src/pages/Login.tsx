@@ -118,47 +118,48 @@ export const Login = () => {
 
   return (
     <>
+      <Navbar user={user} />
       <Box
         sx={{
-          height: '100vh',
+          height: 'calc(100vh - 70px)', // Account for navbar height
           display: 'flex',
           flexDirection: 'column',
-          pt: 4,
+          justifyContent: 'center',
+          alignItems: 'center',
           px: '15px',
           width: '100%',
-          gap: '20px',
           overflow: 'hidden',
+          overflowX: 'hidden',
         }}
       >
         <Card
           variant="outlined"
           sx={{
             width: '300px',
-            margin: 'auto',
-            padding: '20px',
+            padding: '16px',
             backgroundColor: 'secondary.main',
           }}
         >
           <Box
             sx={{
               textAlign: 'center',
-              marginBottom: '20px',
+              marginBottom: '12px',
               fontWeight: 'bold',
             }}
           >
-            <Typography variant="h3" component="h1" gutterBottom>
+            <Typography variant="h4" component="h1" gutterBottom>
               Log in
             </Typography>
           </Box>
 
           {errorMessage && (
-            <Alert severity="error" sx={{ marginBottom: '20px' }}>
+            <Alert severity="error" sx={{ marginBottom: '12px' }}>
               {errorMessage}
             </Alert>
           )}
 
           <Box component="form" action={login} noValidate>
-            <Box sx={{ marginBottom: '20px' }}>
+            <Box sx={{ marginBottom: '12px' }}>
               <TextField
                 variant="outlined"
                 name="username"
@@ -170,10 +171,10 @@ export const Login = () => {
                 fullWidth
                 value={formData.username}
                 onChange={(e) => handleInputChange('username', e.target.value)}
-                sx={{ marginTop: '10px' }}
+                size="small"
               />
             </Box>
-            <Box sx={{ marginBottom: '20px' }}>
+            <Box sx={{ marginBottom: '12px' }}>
               <TextField
                 variant="outlined"
                 name="password"
@@ -185,48 +186,50 @@ export const Login = () => {
                 fullWidth
                 value={formData.password}
                 onChange={(e) => handleInputChange('password', e.target.value)}
-                sx={{ marginTop: '10px' }}
+                size="small"
               />
             </Box>
             <Button type="submit" variant="contained" color="primary" fullWidth>
               Login
             </Button>
           </Box>
+
+          <Box
+            sx={{
+              textAlign: 'center',
+              marginTop: '12px',
+              fontWeight: 'bold',
+            }}
+          >
+            <Typography variant="body2" component="p" sx={{ mb: 0.5 }}>
+              Don't have an account?{' '}
+              <Button
+                variant="text"
+                color="primary"
+                size="small"
+                onClick={() => {
+                  window.location.href = '/register';
+                }}
+              >
+                Register
+              </Button>
+            </Typography>
+            <Typography variant="body2" component="p">
+              Forgot your password?{' '}
+              <Button
+                variant="text"
+                color="primary"
+                size="small"
+                onClick={() => {
+                  window.location.href = '/forgot-password';
+                }}
+              >
+                Reset password
+              </Button>
+            </Typography>
+          </Box>
         </Card>
-        <Box
-          sx={{
-            textAlign: 'center',
-            marginTop: '20px',
-            fontWeight: 'bold',
-          }}
-        >
-          <Typography variant="body1" component="p">
-            Don't have an account?{' '}
-            <Button
-              variant="text"
-              color="primary"
-              onClick={() => {
-                window.location.href = '/register';
-              }}
-            >
-              Register
-            </Button>
-          </Typography>
-          <Typography variant="body1" component="p">
-            Forgot your password?{' '}
-            <Button
-              variant="text"
-              color="primary"
-              onClick={() => {
-                window.location.href = '/forgot-password';
-              }}
-            >
-              Reset password
-            </Button>
-          </Typography>
-        </Box>
       </Box>
-      <Navbar user={user} />
     </>
   );
 };

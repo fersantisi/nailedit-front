@@ -56,7 +56,26 @@ export const Gantt = () => {
         }
 
         const meData = await meResponse.json();
-        setUser(meData);
+        console.log('meData', meData);
+
+        const userId = meData.userId;
+
+        const profileResponse = await fetch(
+          import.meta.env.VITE_SERVER_URL + `/users/profile/${userId}`,
+          {
+            method: 'GET',
+            credentials: 'include',
+          }
+        );
+
+        if (profileResponse.ok) {
+          const userData = await profileResponse.json();
+          setUser(userData);
+        } else {
+          setUser(null);
+          navigate('/login');
+          return;
+        }
 
         // Fetch all data in parallel
         const [projectsResponse, goalsResponse, tasksResponse] =
@@ -230,6 +249,33 @@ export const Gantt = () => {
     return grouped;
   };
 
+  // Calculate timeline dimensions
+  const getTimelineDimensions = () => {
+    if (calendarItems.length === 0)
+      return { startDate: new Date(), endDate: new Date() };
+
+    const dates = calendarItems.map((item) => new Date(item.dueDate));
+    const startDate = new Date(Math.min(...dates.map((d) => d.getTime())));
+    const endDate = new Date(Math.max(...dates.map((d) => d.getTime())));
+
+    // Add some padding
+    startDate.setDate(startDate.getDate() - 7);
+    endDate.setDate(endDate.getDate() + 7);
+
+    return { startDate, endDate };
+  };
+
+  // Calculate position on timeline
+  const getTimelinePosition = (dateString: string) => {
+    const { startDate, endDate } = getTimelineDimensions();
+    const itemDate = new Date(dateString);
+    const totalDays =
+      (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24);
+    const daysFromStart =
+      (itemDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24);
+    return (daysFromStart / totalDays) * 100;
+  };
+
   if (loading) {
     return (
       <Box
@@ -258,6 +304,7 @@ export const Gantt = () => {
 
   const groupedItems = groupItemsByProject();
   const projectNames = Object.keys(groupedItems);
+  const { startDate, endDate } = getTimelineDimensions();
 
   return (
     <>
@@ -329,17 +376,66 @@ export const Gantt = () => {
               </Box>
             </Box>
 
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            {/* Timeline Header */}
+            <Box
+              sx={{
+                mb: 3,
+                p: 2,
+                backgroundColor: 'background.paper',
+                borderRadius: 1,
+              }}
+            >
+              <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold' }}>
+                Timeline: {startDate.toLocaleDateString()} -{' '}
+                {endDate.toLocaleDateString()}
+              </Typography>
+              <Box
+                sx={{
+                  height: '20px',
+                  backgroundColor: 'grey.700',
+                  borderRadius: '10px',
+                  position: 'relative',
+                  mb: 1,
+                }}
+              >
+                {/* Today marker */}
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    top: '-5px',
+                    left: `${getTimelinePosition(new Date().toISOString())}%`,
+                    width: '2px',
+                    height: '30px',
+                    backgroundColor: 'text.primary',
+                    zIndex: 2,
+                  }}
+                />
+                <Typography
+                  variant="caption"
+                  sx={{
+                    position: 'absolute',
+                    top: '25px',
+                    left: `${getTimelinePosition(new Date().toISOString())}%`,
+                    transform: 'translateX(-50%)',
+                    color: 'text.primary',
+                    fontWeight: 'bold',
+                  }}
+                >
+                  Today
+                </Typography>
+              </Box>
+            </Box>
+
+            {/* Gantt Chart */}
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               {projectNames.map((projectName) => (
                 <Paper
                   key={projectName}
                   elevation={2}
                   sx={{
-                    p: 3,
+                    p: 2,
                     backgroundColor: 'background.paper',
                     borderRadius: 2,
-                    maxHeight: '400px',
-                    overflow: 'auto',
                   }}
                 >
                   <Typography
@@ -348,113 +444,108 @@ export const Gantt = () => {
                       mb: 2,
                       fontWeight: 'bold',
                       color: 'primary.main',
-                      borderBottom: '2px solid',
-                      borderColor: 'primary.main',
-                      pb: 1,
                     }}
                   >
                     {projectName}
                   </Typography>
 
-                  <Grid container spacing={2} sx={{ alignItems: 'stretch' }}>
-                    {groupedItems[projectName].map((item) => (
-                      <Grid item xs={12} sm={6} md={4} key={item.id}>
-                        <Card
-                          variant="outlined"
+                  <Box
+                    sx={{
+                      position: 'relative',
+                      height: '60px',
+                      backgroundColor: 'grey.800',
+                      borderRadius: '8px',
+                      mb: 1,
+                    }}
+                  >
+                    {/* Today marker for each project */}
+                    <Box
+                      sx={{
+                        position: 'absolute',
+                        top: '0',
+                        left: `${getTimelinePosition(new Date().toISOString())}%`,
+                        width: '2px',
+                        height: '100%',
+                        backgroundColor: 'text.primary',
+                        zIndex: 1,
+                        opacity: 0.5,
+                      }}
+                    />
+
+                    {/* Timeline items */}
+                    {groupedItems[projectName].map((item, index) => {
+                      const position = getTimelinePosition(item.dueDate);
+                      return (
+                        <Box
+                          key={item.id}
                           sx={{
-                            height: '140px',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            p: 1.5,
+                            position: 'absolute',
+                            left: `${position}%`,
+                            top: '50%',
+                            transform: 'translate(-50%, -50%)',
                             cursor: 'pointer',
-                            transition: 'all 0.2s ease-in-out',
-                            '&:hover': {
-                              transform: 'translateY(-2px)',
-                              boxShadow: 3,
-                            },
-                            borderLeft: `4px solid ${getTypeColor(item.type)}`,
-                            overflow: 'hidden',
+                            zIndex: 3,
                           }}
                           onClick={() => handleItemClick(item)}
                         >
                           <Box
                             sx={{
-                              display: 'flex',
-                              justifyContent: 'space-between',
-                              alignItems: 'flex-start',
-                              mb: 0.5,
+                              width: '12px',
+                              height: '12px',
+                              borderRadius: '50%',
+                              backgroundColor: getTypeColor(item.type),
+                              border: '2px solid white',
+                              boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                              '&:hover': {
+                                transform: 'scale(1.2)',
+                                boxShadow: '0 4px 8px rgba(0,0,0,0.3)',
+                              },
+                              transition: 'all 0.2s ease-in-out',
                             }}
-                          >
-                            <Chip
-                              label={item.type.toUpperCase()}
-                              size="small"
-                              sx={{
-                                backgroundColor: getTypeColor(item.type),
-                                color: 'white',
-                                fontWeight: 'bold',
-                                fontSize: '0.6rem',
-                                height: '18px',
-                              }}
-                            />
-                            {item.priority && (
-                              <Chip
-                                label={item.priority}
-                                size="small"
-                                sx={{
-                                  backgroundColor: getPriorityColor(
-                                    item.priority
-                                  ),
-                                  color: 'white',
-                                  fontWeight: 'bold',
-                                  fontSize: '0.6rem',
-                                  height: '18px',
-                                }}
-                              />
-                            )}
-                          </Box>
-
-                          <Typography
-                            variant="body1"
-                            sx={{
-                              mb: 0.5,
-                              fontWeight: 'medium',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              whiteSpace: 'nowrap',
-                              fontSize: '0.875rem',
-                            }}
-                          >
-                            {item.title}
-                          </Typography>
-
+                          />
                           <Typography
                             variant="caption"
-                            color="text.secondary"
-                            sx={{ mb: 0.5, fontSize: '0.7rem' }}
+                            sx={{
+                              position: 'absolute',
+                              top: '20px',
+                              left: '50%',
+                              transform: 'translateX(-50%)',
+                              whiteSpace: 'nowrap',
+                              fontSize: '0.7rem',
+                              fontWeight: 'bold',
+                              color: getTypeColor(item.type),
+                            }}
                           >
-                            Due: {formatDate(item.dueDate)}
+                            {formatDate(item.dueDate)}
                           </Typography>
+                        </Box>
+                      );
+                    })}
+                  </Box>
 
-                          <Box sx={{ mt: 'auto', overflow: 'hidden' }}>
-                            {item.goalName && (
-                              <Typography
-                                variant="caption"
-                                color="text.secondary"
-                                sx={{
-                                  overflow: 'hidden',
-                                  textOverflow: 'ellipsis',
-                                  whiteSpace: 'nowrap',
-                                  fontSize: '0.7rem',
-                                }}
-                              >
-                                Goal: {item.goalName}
-                              </Typography>
-                            )}
-                          </Box>
-                        </Card>
-                      </Grid>
+                  {/* Legend for this project */}
+                  <Box
+                    sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 1 }}
+                  >
+                    {groupedItems[projectName].map((item) => (
+                      <Chip
+                        key={item.id}
+                        label={`${item.type.toUpperCase()}: ${item.title}`}
+                        size="small"
+                        sx={{
+                          backgroundColor: getTypeColor(item.type),
+                          color: 'white',
+                          fontWeight: 'bold',
+                          fontSize: '0.7rem',
+                          cursor: 'pointer',
+                          '&:hover': {
+                            opacity: 0.8,
+                          },
+                        }}
+                        onClick={() => handleItemClick(item)}
+                      />
                     ))}
-                  </Grid>
+                  </Box>
                 </Paper>
               ))}
             </Box>
