@@ -58,7 +58,7 @@ export const AdminUsers = () => {
       {user ? (
         <Box
           sx={{
-            height: '100vh',
+            minHeight: 'calc(100vh - 70px)',
             display: 'flex',
             flexDirection: 'column',
             pt: 4,
@@ -66,6 +66,7 @@ export const AdminUsers = () => {
             width: '100%',
             gap: '20px',
             overflow: 'hidden',
+            overflowX: 'hidden',
           }}
         >
           <UserTable />

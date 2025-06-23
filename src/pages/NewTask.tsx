@@ -222,6 +222,8 @@ export const NewTask = () => {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
+          overflow: 'hidden',
+          overflowX: 'hidden',
         }}
       >
         Loading...
@@ -234,21 +236,21 @@ export const NewTask = () => {
       <Navbar user={user} />
       <Box
         sx={{
-          height: '100vh',
+          height: 'calc(100vh - 70px)',
           display: 'flex',
           flexDirection: 'column',
-          pt: 4,
+          justifyContent: 'center',
+          alignItems: 'center',
           px: '15px',
           width: '100%',
-          gap: '20px',
           overflow: 'hidden',
+          overflowX: 'hidden',
         }}
       >
         <Card
           variant="outlined"
           sx={{
             width: '400px',
-            margin: 'auto',
             padding: '20px',
             backgroundColor: 'secondary.main',
           }}

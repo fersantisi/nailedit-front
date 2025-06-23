@@ -123,13 +123,20 @@ export const HomeTaskCard = ({ task }: HomeTaskCardProps) => {
           )}
 
           {/* Chips */}
-          <Box sx={{ mt: 'auto', display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+          <Box
+            sx={{
+              mt: 'auto',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 0.5,
+            }}
+          >
             <Chip
               icon={<PriorityIcon />}
               label={task.label}
               size="small"
               color={getPriorityColor(task.label) as any}
-              variant="outlined"
+              variant="filled"
               sx={{ fontSize: '0.7rem', height: '20px' }}
             />
             {task.dueDate && (
@@ -137,8 +144,8 @@ export const HomeTaskCard = ({ task }: HomeTaskCardProps) => {
                 icon={<CalendarIcon />}
                 label={formatDate(task.dueDate)}
                 size="small"
-                color="secondary"
-                variant="outlined"
+                color="info"
+                variant="filled"
                 sx={{
                   fontSize: '0.7rem',
                   height: '20px',

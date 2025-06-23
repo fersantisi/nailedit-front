@@ -284,6 +284,8 @@ export const Gantt = () => {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
+          overflow: 'hidden',
+          overflowX: 'hidden',
         }}
       >
         <CircularProgress />
@@ -295,7 +297,9 @@ export const Gantt = () => {
     return (
       <>
         <Navbar user={user} />
-        <Container sx={{ pt: 3, pb: '80px' }}>
+        <Container
+          sx={{ pt: 3, pb: '80px', overflow: 'hidden', overflowX: 'hidden' }}
+        >
           <Alert severity="error">{error}</Alert>
         </Container>
       </>
@@ -311,7 +315,14 @@ export const Gantt = () => {
       <Navbar user={user} />
       <Container
         maxWidth={false}
-        sx={{ pt: 3, pb: '80px', px: { xs: 2, sm: 3, md: 4 } }}
+        sx={{
+          pt: 3,
+          pb: '80px',
+          px: { xs: 2, sm: 3, md: 4 },
+          minHeight: 'calc(100vh - 70px)',
+          overflow: 'hidden',
+          overflowX: 'hidden',
+        }}
       >
         <Box sx={{ mb: 4 }}>
           <Typography

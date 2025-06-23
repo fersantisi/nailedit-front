@@ -214,6 +214,8 @@ export const Project = () => {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
+          overflow: 'hidden',
+          overflowX: 'hidden',
         }}
       >
         <CircularProgress />
@@ -225,7 +227,9 @@ export const Project = () => {
     return (
       <>
         <Navbar user={user} />
-        <Container sx={{ pt: 3, pb: '80px' }}>
+        <Container
+          sx={{ pt: 3, pb: '80px', overflow: 'hidden', overflowX: 'hidden' }}
+        >
           <Alert severity="error">{error}</Alert>
         </Container>
       </>
@@ -239,13 +243,15 @@ export const Project = () => {
       {console.log('Rendering with goals:', goals)}
       <Box
         sx={{
-          minHeight: '100vh',
+          minHeight: 'calc(100vh - 70px)',
           display: 'flex',
           flexDirection: 'column',
           pt: 3,
           px: '15px',
           width: '100%',
           gap: '20px',
+          overflow: 'hidden',
+          overflowX: 'hidden',
         }}
       >
         <ProjectHeader

@@ -88,6 +88,7 @@ export const Profile = () => {
         if (profileResponse.ok) {
           const userData = await profileResponse.json();
           setUser(userData);
+          setProfileData(userData);
         } else {
           setUser(null);
           navigate('/login');
@@ -178,6 +179,8 @@ export const Profile = () => {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
+          overflow: 'hidden',
+          overflowX: 'hidden',
         }}
       >
         <CircularProgress />
@@ -191,7 +194,7 @@ export const Profile = () => {
         <Navbar user={user} />
         <Box
           sx={{
-            height: '100vh',
+            minHeight: 'calc(100vh - 70px)',
             display: 'flex',
             flexDirection: 'column',
             pt: 4,
@@ -199,6 +202,7 @@ export const Profile = () => {
             width: '100%',
             gap: '20px',
             overflow: 'hidden',
+            overflowX: 'hidden',
           }}
         >
           <Alert severity="error">{error}</Alert>
@@ -212,21 +216,21 @@ export const Profile = () => {
       <Navbar user={user} />
       <Box
         sx={{
-          height: '100vh',
+          minHeight: 'calc(100vh - 70px)',
           display: 'flex',
           flexDirection: 'column',
-          pt: 4,
+          justifyContent: 'center',
+          alignItems: 'center',
           px: '15px',
           width: '100%',
-          gap: '20px',
           overflow: 'hidden',
+          overflowX: 'hidden',
         }}
       >
         <Card
           variant="outlined"
           sx={{
             maxWidth: '600px',
-            margin: 'auto',
             padding: '30px',
             backgroundColor: 'secondary.main',
           }}

@@ -8,8 +8,13 @@ import {
   Chip,
   Fab,
   Container,
+  Paper,
 } from '@mui/material';
-import { Add as AddIcon } from '@mui/icons-material';
+import {
+  Add as AddIcon,
+  Folder as ProjectIcon,
+  CalendarToday as CalendarIcon,
+} from '@mui/icons-material';
 import { Navbar } from '../components/ui/navbar';
 import { useEffect, useState } from 'react';
 import { User, Project } from '../types';
@@ -145,6 +150,8 @@ export const ProjectList = () => {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
+          overflow: 'hidden',
+          overflowX: 'hidden',
         }}
       >
         <CircularProgress />
@@ -156,7 +163,9 @@ export const ProjectList = () => {
     return (
       <>
         <Navbar user={user} />
-        <Container sx={{ pt: 3, pb: '80px' }}>
+        <Container
+          sx={{ pt: 3, pb: '80px', overflow: 'hidden', overflowX: 'hidden' }}
+        >
           <Alert severity="error">{error}</Alert>
         </Container>
       </>
@@ -168,127 +177,243 @@ export const ProjectList = () => {
       <Navbar user={user} />
       <Container
         maxWidth={false}
-        sx={{ pt: 3, pb: '80px', px: { xs: 2, sm: 3, md: 4 } }}
+        sx={{
+          pt: 3,
+          pb: '80px',
+          px: { xs: 2, sm: 3, md: 4 },
+          minHeight: 'calc(100vh - 70px)',
+          overflow: 'hidden',
+          overflowX: 'hidden',
+        }}
       >
+        {/* Header Section */}
         <Box sx={{ mb: 4 }}>
-          <Typography
-            variant="h4"
-            component="h1"
-            gutterBottom
-            sx={{ fontWeight: 'bold' }}
-          >
-            My Projects
-          </Typography>
-          <Typography variant="body1" color="text.secondary">
-            Manage and track all your projects
-          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+            <Box
+              sx={{
+                backgroundColor: 'primary.main',
+                borderRadius: '50%',
+                p: 1.5,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <ProjectIcon sx={{ color: 'white', fontSize: '1.5rem' }} />
+            </Box>
+            <Box>
+              <Typography
+                variant="h4"
+                component="h1"
+                sx={{ fontWeight: 'bold' }}
+              >
+                My Projects
+              </Typography>
+              <Typography variant="body1" color="text.secondary">
+                {projects.length} total projects
+              </Typography>
+            </Box>
+          </Box>
         </Box>
 
+        {/* Content Section */}
         {projects.length === 0 ? (
-          <Box
+          <Card
+            variant="outlined"
             sx={{
-              p: 4,
+              p: 6,
               textAlign: 'center',
               backgroundColor: 'background.paper',
-              borderRadius: 2,
-              border: '1px dashed',
+              borderRadius: 3,
+              border: '2px dashed',
               borderColor: 'divider',
+              maxWidth: 600,
+              mx: 'auto',
             }}
           >
-            <Typography variant="h6" color="text.secondary" gutterBottom>
+            <Box
+              sx={{
+                backgroundColor: 'grey.100',
+                borderRadius: '50%',
+                width: 80,
+                height: 80,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                mx: 'auto',
+                mb: 3,
+              }}
+            >
+              <ProjectIcon sx={{ fontSize: 40, color: 'grey.500' }} />
+            </Box>
+            <Typography variant="h5" color="text.secondary" gutterBottom>
               No projects yet
             </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Create your first project to get started
+            <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
+              Create your first project to get started with project management
             </Typography>
-          </Box>
+            <Fab
+              color="primary"
+              variant="extended"
+              onClick={() => navigate('/project/create')}
+              sx={{ px: 3 }}
+            >
+              <AddIcon sx={{ mr: 1 }} />
+              Create Project
+            </Fab>
+          </Card>
         ) : (
-          <Grid container spacing={3}>
-            {projects.map((project) => (
-              <Grid item xs={12} sm={6} md={4} lg={3} key={project.id}>
-                <Card
-                  variant="outlined"
-                  sx={{
-                    p: 3,
-                    height: '100%',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease-in-out',
-                    '&:hover': {
-                      transform: 'translateY(-4px)',
-                      boxShadow: 4,
-                    },
-                    display: 'flex',
-                    flexDirection: 'column',
-                  }}
-                  onClick={() => navigate(`/project/${project.id}`)}
-                >
-                  <Box sx={{ mb: 2 }}>
-                    <Typography
-                      variant="h6"
-                      component="h2"
-                      gutterBottom
-                      sx={{ fontWeight: 'bold' }}
-                    >
-                      {project.name}
-                    </Typography>
-                    <Typography
-                      variant="body2"
-                      color="text.secondary"
-                      sx={{ mb: 2 }}
-                    >
-                      {project.description || 'No description'}
-                    </Typography>
-                  </Box>
+          <Card
+            variant="outlined"
+            sx={{
+              p: 3,
+              backgroundColor: 'secondary.main',
+              maxHeight: '80vh',
+              overflow: 'auto',
+            }}
+          >
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 2,
+                mb: 3,
+              }}
+            >
+              <ProjectIcon sx={{ fontSize: 40, color: 'primary.main' }} />
+              <Box>
+                <Typography variant="h5" component="h2" gutterBottom>
+                  Project Overview
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {projects.length} total projects
+                </Typography>
+              </Box>
+            </Box>
 
-                  <Box sx={{ mb: 2 }}>
-                    <Chip
-                      label={project.category || 'Uncategorized'}
-                      size="small"
-                      sx={{
-                        backgroundColor: 'primary.main',
-                        color: 'white',
-                        fontWeight: 'bold',
-                      }}
-                    />
-                  </Box>
-
-                  {project.dueDate && (
-                    <Box sx={{ mb: 2 }}>
-                      <Chip
-                        label={getStatusText(project.dueDate)}
-                        size="small"
-                        sx={{
-                          backgroundColor: getStatusColor(project.dueDate),
-                          color: 'white',
-                          fontWeight: 'bold',
-                        }}
-                      />
-                      <Typography
-                        variant="caption"
-                        color="text.secondary"
-                        sx={{ display: 'block', mt: 1 }}
+            <Grid container spacing={3}>
+              {projects.map((project) => (
+                <Grid item xs={12} sm={6} md={4} lg={3} key={project.id}>
+                  <Card
+                    variant="outlined"
+                    sx={{
+                      height: '100%',
+                      cursor: 'pointer',
+                      transition: 'all 0.3s ease-in-out',
+                      '&:hover': {
+                        transform: 'translateY(-4px)',
+                        boxShadow: 6,
+                        borderColor: 'primary.main',
+                      },
+                      display: 'flex',
+                      flexDirection: 'column',
+                      position: 'relative',
+                      overflow: 'hidden',
+                    }}
+                    onClick={() => navigate(`/project/${project.id}`)}
+                  >
+                    {/* Header with Icon and Title */}
+                    <Box sx={{ p: 2.5, pb: 2 }}>
+                      <Box
+                        sx={{ display: 'flex', alignItems: 'center', mb: 2 }}
                       >
-                        Due: {formatDate(project.dueDate)}
+                        <Box
+                          sx={{
+                            backgroundColor: 'primary.main',
+                            borderRadius: '50%',
+                            p: 1,
+                            mr: 1.5,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          }}
+                        >
+                          <ProjectIcon
+                            sx={{ color: 'white', fontSize: '1.2rem' }}
+                          />
+                        </Box>
+                        <Typography
+                          variant="h6"
+                          component="h3"
+                          sx={{
+                            fontWeight: 'bold',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                            color: 'text.primary',
+                            fontSize: '1.1rem',
+                          }}
+                        >
+                          {project.name}
+                        </Typography>
+                      </Box>
+
+                      {/* Description */}
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{
+                          display: '-webkit-box',
+                          WebkitLineClamp: 3,
+                          WebkitBoxOrient: 'vertical',
+                          overflow: 'hidden',
+                          lineHeight: 1.5,
+                          fontSize: '0.875rem',
+                          mb: 2,
+                        }}
+                      >
+                        {project.description || 'No description'}
                       </Typography>
                     </Box>
-                  )}
 
-                  <Box
-                    sx={{
-                      mt: 'auto',
-                      pt: 2,
-                      borderTop: '1px solid',
-                      borderColor: 'divider',
-                    }}
-                  >
-                    <Typography variant="caption" color="text.secondary">
-                      Click to view details
-                    </Typography>
-                  </Box>
-                </Card>
-              </Grid>
-            ))}
-          </Grid>
+                    {/* Chips Section */}
+                    <Box sx={{ p: 2.5, pt: 0, mt: 'auto' }}>
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: 1,
+                        }}
+                      >
+                        <Chip
+                          label={project.category || 'Uncategorized'}
+                          size="small"
+                          color="success"
+                          variant="filled"
+                          sx={{
+                            fontWeight: 'bold',
+                            fontSize: '0.75rem',
+                            height: '24px',
+                            alignSelf: 'flex-start',
+                          }}
+                        />
+                        {project.dueDate && (
+                          <Chip
+                            icon={<CalendarIcon />}
+                            label={formatDate(project.dueDate)}
+                            size="small"
+                            color="warning"
+                            variant="filled"
+                            sx={{
+                              pl: 1,
+                              fontWeight: 'bold',
+                              fontSize: '0.75rem',
+                              height: '24px',
+                              alignSelf: 'flex-start',
+                              '& .MuiChip-icon': {
+                                ml: 0.5,
+                                fontSize: '0.9rem',
+                              },
+                            }}
+                          />
+                        )}
+                      </Box>
+                    </Box>
+                  </Card>
+                </Grid>
+              ))}
+            </Grid>
+          </Card>
         )}
 
         {/* Floating Action Button for creating new project */}

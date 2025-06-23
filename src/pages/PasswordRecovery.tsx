@@ -43,7 +43,19 @@ export const PasswordRecovery = () => {
   };
 
   return (
-    <Box>
+    <Box
+      sx={{
+        height: '100vh',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        alignItems: 'center',
+        px: '15px',
+        width: '100%',
+        overflow: 'hidden',
+        overflowX: 'hidden',
+      }}
+    >
       <Button
         variant="contained"
         color="primary"
@@ -67,7 +79,6 @@ export const PasswordRecovery = () => {
         variant="outlined"
         sx={{
           width: '300px',
-          margin: 'auto',
           padding: '20px',
           backgroundColor: 'secondary.main',
         }}

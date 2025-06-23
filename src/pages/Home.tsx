@@ -63,6 +63,8 @@ export const Home = () => {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
+          overflow: 'hidden',
+          overflowX: 'hidden',
         }}
       >
         Loading...
@@ -77,13 +79,15 @@ export const Home = () => {
         <Container
           maxWidth={false}
           sx={{
-            minHeight: '100vh',
+            minHeight: 'calc(100vh - 70px)',
             display: 'flex',
             flexDirection: 'column',
             pt: { xs: 2, sm: 3, md: 4 },
             pb: '80px',
             px: { xs: 2, sm: 3, md: 4 },
             gap: 3,
+            overflow: 'hidden',
+            overflowX: 'hidden',
           }}
         >
           <HomeTopSection />
