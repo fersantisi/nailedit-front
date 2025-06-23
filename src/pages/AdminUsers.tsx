@@ -1,4 +1,4 @@
-import { Box } from '@mui/material';
+import { Box, Container } from '@mui/material';
 import { Navbar } from '../components/ui/navbar';
 import { HomeGuest } from '../components/home/HomeGuest';
 import { UserTable } from '../components/admin/UserTable';
@@ -55,26 +55,24 @@ export const AdminUsers = () => {
 
   return (
     <>
+      <Navbar user={user} isAdmin={true} />
       {user ? (
-        <Box
+        <Container
+          maxWidth={false}
           sx={{
+            pt: 3,
+            pb: '80px',
+            px: { xs: 2, sm: 3, md: 4 },
             minHeight: 'calc(100vh - 70px)',
-            display: 'flex',
-            flexDirection: 'column',
-            pt: 4,
-            px: '15px',
-            width: '100%',
-            gap: '20px',
             overflow: 'hidden',
             overflowX: 'hidden',
           }}
         >
           <UserTable />
-        </Box>
+        </Container>
       ) : (
         <HomeGuest />
       )}
-      <Navbar user={user} />
     </>
   );
 };

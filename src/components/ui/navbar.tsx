@@ -4,9 +4,10 @@ import { User } from '../../types';
 
 interface NavbarProps {
   user: User | null;
+  isAdmin?: boolean;
 }
 
-export const Navbar = ({ user }: NavbarProps) => {
+export const Navbar = ({ user, isAdmin = false }: NavbarProps) => {
   return (
     <Box sx={{ width: '100%' }}>
       <Box
@@ -36,7 +37,7 @@ export const Navbar = ({ user }: NavbarProps) => {
               </Typography>
             </NavbarItem>
           </Box>
-          {user ? (
+          {user && !isAdmin ? (
             <>
               <NavbarItem to="/project/list">
                 <Typography variant="h6" component="div">
@@ -54,9 +55,7 @@ export const Navbar = ({ user }: NavbarProps) => {
                 </Typography>
               </NavbarItem>
             </>
-          ) : (
-            <></>
-          )}
+          ) : null}
         </Box>
         <Box sx={{ display: 'flex', gap: '20px', pr: 3 }}>
           {user ? (
