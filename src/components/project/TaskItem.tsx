@@ -61,12 +61,14 @@ export const TaskItem: React.FC<TaskItemProps> = ({
             </Typography>
           )}
           <Box sx={{ display: 'flex', gap: 1, mt: 0.5 }}>
-            <Chip
-              label={task.label}
-              size="small"
-              color={getPriorityColor(task.label) as any}
-              variant="outlined"
-            />
+            {task.label && (
+              <Chip
+                label={task.label}
+                size="small"
+                color={getPriorityColor(task.label) as any}
+                variant="outlined"
+              />
+            )}
             {task.dueDate && (
               <Chip
                 icon={<CalendarIcon />}

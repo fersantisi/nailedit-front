@@ -131,27 +131,35 @@ export const HomeTaskCard = ({ task }: HomeTaskCardProps) => {
               gap: 0.5,
             }}
           >
-            <Chip
-              icon={<PriorityIcon />}
-              label={task.label}
-              size="small"
-              color={getPriorityColor(task.label) as any}
-              variant="filled"
-              sx={{ fontSize: '0.7rem', height: '20px' }}
-            />
+            {task.label && (
+              <Chip
+                icon={<PriorityIcon />}
+                label={task.label}
+                size="small"
+                color={getPriorityColor(task.label) as any}
+                variant="filled"
+                sx={{ fontSize: '0.7rem', height: '20px' }}
+              />
+            )}
             {task.dueDate && (
               <Chip
                 icon={<CalendarIcon />}
                 label={formatDate(task.dueDate)}
                 size="small"
-                color="info"
+                color={new Date(task.dueDate) < new Date() ? 'error' : 'info'}
                 variant="filled"
                 sx={{
                   fontSize: '0.7rem',
                   height: '20px',
                   pl: 1,
+                  backgroundColor:
+                    new Date(task.dueDate) < new Date() ? '#b71c1c' : undefined,
+                  color:
+                    new Date(task.dueDate) < new Date() ? '#fff' : undefined,
                   '& .MuiChip-icon': {
                     ml: 0.5,
+                    color:
+                      new Date(task.dueDate) < new Date() ? '#fff' : undefined,
                   },
                 }}
               />

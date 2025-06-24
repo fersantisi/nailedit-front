@@ -17,7 +17,7 @@ import {
 } from '@mui/icons-material';
 import { Navbar } from '../components/ui/navbar';
 import { useEffect, useState } from 'react';
-import { User, Project } from '../types';
+import { User } from '../types';
 import { useNavigate } from 'react-router-dom';
 import { formatDate } from '../utils/dateUtils';
 
@@ -25,7 +25,7 @@ export const ProjectList = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [projects, setProjects] = useState<Project[]>([]);
+  const [projects, setProjects] = useState<any[]>([]);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -84,7 +84,7 @@ export const ProjectList = () => {
           throw new Error('Failed to fetch projects');
         }
 
-        const projectsData: Project[] = await projectsResponse.json();
+        const projectsData = await projectsResponse.json();
         console.log('Projects:', projectsData);
         setProjects(projectsData);
       } catch (error) {
@@ -210,7 +210,7 @@ export const ProjectList = () => {
                 My Projects
               </Typography>
               <Typography variant="body1" color="text.secondary">
-                {projects.length} total projects
+                View all your projects
               </Typography>
             </Box>
           </Box>
@@ -292,126 +292,135 @@ export const ProjectList = () => {
             </Box>
 
             <Grid container spacing={3}>
-              {projects.map((project) => (
-                <Grid item xs={12} sm={6} md={4} lg={3} key={project.id}>
-                  <Card
-                    variant="outlined"
+              {[...projects]
+                .sort((a, b) => a.name.localeCompare(b.name))
+                .map((project) => (
+                  <Box
+                    key={project.id}
                     sx={{
-                      height: '100%',
-                      cursor: 'pointer',
-                      transition: 'all 0.3s ease-in-out',
-                      '&:hover': {
-                        transform: 'translateY(-4px)',
-                        boxShadow: 6,
-                        borderColor: 'primary.main',
-                      },
-                      display: 'flex',
-                      flexDirection: 'column',
-                      position: 'relative',
-                      overflow: 'hidden',
+                      width: { xs: '100%', sm: '50%', md: '33.33%', lg: '25%' },
+                      p: 1,
+                      boxSizing: 'border-box',
                     }}
-                    onClick={() => navigate(`/project/${project.id}`)}
                   >
-                    {/* Header with Icon and Title */}
-                    <Box sx={{ p: 2.5, pb: 2 }}>
-                      <Box
-                        sx={{ display: 'flex', alignItems: 'center', mb: 2 }}
-                      >
+                    <Card
+                      variant="outlined"
+                      sx={{
+                        height: '100%',
+                        cursor: 'pointer',
+                        transition: 'all 0.3s ease-in-out',
+                        '&:hover': {
+                          transform: 'translateY(-4px)',
+                          boxShadow: 6,
+                          borderColor: 'primary.main',
+                        },
+                        display: 'flex',
+                        flexDirection: 'column',
+                        position: 'relative',
+                        overflow: 'hidden',
+                      }}
+                      onClick={() => navigate(`/project/${project.id}`)}
+                    >
+                      {/* Header with Icon and Title */}
+                      <Box sx={{ p: 2.5, pb: 2 }}>
                         <Box
-                          sx={{
-                            backgroundColor: 'primary.main',
-                            borderRadius: '50%',
-                            p: 1,
-                            mr: 1.5,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                          }}
+                          sx={{ display: 'flex', alignItems: 'center', mb: 2 }}
                         >
-                          <ProjectIcon
-                            sx={{ color: 'white', fontSize: '1.2rem' }}
-                          />
+                          <Box
+                            sx={{
+                              backgroundColor: 'primary.main',
+                              borderRadius: '50%',
+                              p: 1,
+                              mr: 1.5,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                            }}
+                          >
+                            <ProjectIcon
+                              sx={{ color: 'white', fontSize: '1.2rem' }}
+                            />
+                          </Box>
+                          <Typography
+                            variant="h6"
+                            component="h3"
+                            sx={{
+                              fontWeight: 'bold',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                              color: 'text.primary',
+                              fontSize: '1.1rem',
+                            }}
+                          >
+                            {project.name}
+                          </Typography>
                         </Box>
+
+                        {/* Description */}
                         <Typography
-                          variant="h6"
-                          component="h3"
+                          variant="body2"
+                          color="text.secondary"
                           sx={{
-                            fontWeight: 'bold',
+                            display: '-webkit-box',
+                            WebkitLineClamp: 3,
+                            WebkitBoxOrient: 'vertical',
                             overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap',
-                            color: 'text.primary',
-                            fontSize: '1.1rem',
+                            lineHeight: 1.5,
+                            fontSize: '0.875rem',
+                            mb: 2,
                           }}
                         >
-                          {project.name}
+                          {project.description || 'No description'}
                         </Typography>
                       </Box>
 
-                      {/* Description */}
-                      <Typography
-                        variant="body2"
-                        color="text.secondary"
-                        sx={{
-                          display: '-webkit-box',
-                          WebkitLineClamp: 3,
-                          WebkitBoxOrient: 'vertical',
-                          overflow: 'hidden',
-                          lineHeight: 1.5,
-                          fontSize: '0.875rem',
-                          mb: 2,
-                        }}
-                      >
-                        {project.description || 'No description'}
-                      </Typography>
-                    </Box>
-
-                    {/* Chips Section */}
-                    <Box sx={{ p: 2.5, pt: 0, mt: 'auto' }}>
-                      <Box
-                        sx={{
-                          display: 'flex',
-                          flexDirection: 'column',
-                          gap: 1,
-                        }}
-                      >
-                        <Chip
-                          label={project.category || 'Uncategorized'}
-                          size="small"
-                          color="success"
-                          variant="filled"
+                      {/* Chips Section */}
+                      <Box sx={{ p: 2.5, pt: 0, mt: 'auto' }}>
+                        <Box
                           sx={{
-                            fontWeight: 'bold',
-                            fontSize: '0.75rem',
-                            height: '24px',
-                            alignSelf: 'flex-start',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 1,
                           }}
-                        />
-                        {project.dueDate && (
+                        >
                           <Chip
-                            icon={<CalendarIcon />}
-                            label={formatDate(project.dueDate)}
+                            label={project.category || 'Uncategorized'}
                             size="small"
-                            color="warning"
+                            color="success"
                             variant="filled"
                             sx={{
-                              pl: 1,
                               fontWeight: 'bold',
                               fontSize: '0.75rem',
                               height: '24px',
                               alignSelf: 'flex-start',
-                              '& .MuiChip-icon': {
-                                ml: 0.5,
-                                fontSize: '0.9rem',
-                              },
                             }}
                           />
-                        )}
+                          {project.dueDate && (
+                            <Chip
+                              icon={<CalendarIcon />}
+                              label={formatDate(project.dueDate)}
+                              size="small"
+                              color="warning"
+                              variant="filled"
+                              sx={{
+                                pl: 1,
+                                fontWeight: 'bold',
+                                fontSize: '0.75rem',
+                                height: '24px',
+                                alignSelf: 'flex-start',
+                                '& .MuiChip-icon': {
+                                  ml: 0.5,
+                                  fontSize: '0.9rem',
+                                },
+                              }}
+                            />
+                          )}
+                        </Box>
                       </Box>
-                    </Box>
-                  </Card>
-                </Grid>
-              ))}
+                    </Card>
+                  </Box>
+                ))}
             </Grid>
           </Card>
         )}

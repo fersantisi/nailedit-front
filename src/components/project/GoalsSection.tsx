@@ -82,13 +82,6 @@ export const GoalsSection: React.FC<GoalsSectionProps> = ({
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
             Start by creating your first goal to organize your project tasks.
           </Typography>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => navigate(`/project/${projectId}/goal/create`)}
-          >
-            Create First Goal
-          </Button>
         </Card>
       )}
     </Box>

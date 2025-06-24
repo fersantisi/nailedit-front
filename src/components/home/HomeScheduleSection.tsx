@@ -86,17 +86,33 @@ export const HomeScheduleSection = () => {
     fetchTasks();
   }, []);
 
-  // Filter tasks by priority and upcoming deadlines
+  // Filter tasks for upcoming and overdue
+  const now = new Date();
   const upcomingTasks = tasks
-    .filter((task) => task.dueDate && new Date(task.dueDate) > new Date())
-    .sort(
-      (a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
-    )
+    .filter((task) => {
+      if (!task.dueDate) return false;
+      const due = new Date(task.dueDate);
+      return due > now;
+    })
+    .sort((a, b) => {
+      const aDue = a.dueDate ? new Date(a.dueDate).getTime() : 0;
+      const bDue = b.dueDate ? new Date(b.dueDate).getTime() : 0;
+      return aDue - bDue;
+    })
     .slice(0, 4);
 
-  const highPriorityTasks = tasks
-    .filter((task) => task.label === 'high' || task.label === 'urgent')
-    .slice(0, 6);
+  const overdueTasks = tasks
+    .filter((task) => {
+      if (!task.dueDate) return false;
+      const due = new Date(task.dueDate);
+      return due < now;
+    })
+    .sort((a, b) => {
+      const aDue = a.dueDate ? new Date(a.dueDate).getTime() : 0;
+      const bDue = b.dueDate ? new Date(b.dueDate).getTime() : 0;
+      return bDue - aDue;
+    })
+    .slice(0, 4);
 
   if (loading) {
     return (
@@ -157,6 +173,47 @@ export const HomeScheduleSection = () => {
       </Box>
 
       <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 3 }}>
+        {/* Overdue Tasks Section */}
+        <Box>
+          <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold' }}>
+            Overdue Tasks
+          </Typography>
+          {overdueTasks.length === 0 ? (
+            <Box
+              sx={{
+                p: 3,
+                textAlign: 'center',
+                backgroundColor: 'background.paper',
+                borderRadius: 1,
+                border: '1px dashed',
+                borderColor: 'divider',
+              }}
+            >
+              <Typography variant="body2" color="text.secondary">
+                No overdue tasks
+              </Typography>
+            </Box>
+          ) : (
+            <Box
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: {
+                  xs: 'repeat(2, 1fr)',
+                  sm: 'repeat(3, 1fr)',
+                  md: 'repeat(4, 1fr)',
+                },
+                gap: 1.5,
+              }}
+            >
+              {overdueTasks.map((task) => (
+                <Box key={task.id} sx={{ minHeight: '120px' }}>
+                  <HomeTaskCard task={task} />
+                </Box>
+              ))}
+            </Box>
+          )}
+        </Box>
+
         {/* Upcoming Deadlines Section */}
         <Box>
           <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold' }}>
@@ -195,63 +252,7 @@ export const HomeScheduleSection = () => {
                   <HomeTaskCard task={task} />
                 </Box>
               ))}
-              {tasks.length > 6 && (
-                <Box
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <HomeMoreButton edge="50px" fontSize="15px" iconSize="30px" />
-                </Box>
-              )}
-            </Box>
-          )}
-        </Box>
-
-        {/* High Priority Tasks Section */}
-        <Box>
-          <Typography
-            variant="h6"
-            sx={{ mb: { xs: 1, sm: 2 }, fontWeight: 'bold' }}
-          >
-            High Priority Tasks
-          </Typography>
-
-          {highPriorityTasks.length === 0 ? (
-            <Box
-              sx={{
-                p: { xs: 2, sm: 3 },
-                textAlign: 'center',
-                backgroundColor: 'background.paper',
-                borderRadius: 1,
-                border: '1px dashed',
-                borderColor: 'divider',
-              }}
-            >
-              <Typography variant="body2" color="text.secondary">
-                No high-priority tasks
-              </Typography>
-            </Box>
-          ) : (
-            <Box
-              sx={{
-                display: 'grid',
-                gridTemplateColumns: {
-                  xs: 'repeat(2, 1fr)',
-                  sm: 'repeat(3, 1fr)',
-                  md: 'repeat(4, 1fr)',
-                },
-                gap: { xs: 1, sm: 1.5 },
-              }}
-            >
-              {highPriorityTasks.map((task) => (
-                <Box key={task.id} sx={{ minHeight: '120px' }}>
-                  <HomeTaskCard task={task} />
-                </Box>
-              ))}
-              {highPriorityTasks.length > 6 && (
+              {tasks.length > 8 && (
                 <Box
                   sx={{
                     display: 'flex',

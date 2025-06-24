@@ -141,45 +141,43 @@ export const HomeTopSection = () => {
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
             Create your first project to get started
           </Typography>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => navigate('/project/create')}
-          >
-            Create First Project
-          </Button>
         </Box>
       ) : (
-        <Box
-          sx={{
-            display: 'grid',
-            gridTemplateColumns: {
-              xs: '1fr',
-              sm: 'repeat(2, 1fr)',
-              md: 'repeat(3, 1fr)',
-              lg: 'repeat(4, 1fr)',
-            },
-            gap: 3,
-            flex: 1,
-          }}
-        >
-          {projects.slice(0, 8).map((project: Project) => (
-            <Box key={project.id} sx={{ minHeight: '200px' }}>
-              <HomeProjectCard project={project} />
-            </Box>
-          ))}
-          {projects.length > 8 && (
-            <Box
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <HomeMoreButton edge="100px" fontSize="20px" iconSize="50px" />
+        <>
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: {
+                xs: '1fr',
+                sm: 'repeat(2, 1fr)',
+                md: 'repeat(3, 1fr)',
+                lg: 'repeat(4, 1fr)',
+              },
+              gap: 3,
+              flex: 1,
+            }}
+          >
+            {[...projects]
+              .sort((a, b) => a.name.localeCompare(b.name))
+              .slice(0, 4)
+              .map((project: Project) => (
+                <Box key={project.id} sx={{ minHeight: '200px' }}>
+                  <HomeProjectCard project={project} />
+                </Box>
+              ))}
+          </Box>
+          {projects.length > 4 && (
+            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+              <Button
+                variant="outlined"
+                color="primary"
+                onClick={() => navigate('/project/list')}
+              >
+                View All Projects
+              </Button>
             </Box>
           )}
-        </Box>
+        </>
       )}
     </Box>
   );

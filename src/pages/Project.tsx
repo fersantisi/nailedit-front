@@ -1,14 +1,9 @@
-import {
-  Box,
-  Container,
-  CircularProgress,
-  Alert,
-} from '@mui/material';
+import { Box, Container, CircularProgress, Alert, Button } from '@mui/material';
 import { Navbar } from '../components/ui/navbar';
 import { useEffect, useState } from 'react';
 import { Goal, User } from '../types';
 import { useParams, useNavigate } from 'react-router-dom';
-import { NotesModal } from '../components/project/NotesModal';
+import NotesModal from '../components/project/NotesModal';
 import { ProjectHeader } from '../components/project/ProjectHeader';
 import { GoalsSection } from '../components/project/GoalsSection';
 import { formatDate, getPriorityColor } from '../utils/dateUtils';
@@ -30,15 +25,13 @@ export const Project = () => {
   // Notes modal state
   const [notesModal, setNotesModal] = useState<{
     open: boolean;
-    entityType: 'goal' | 'task';
-    entityId: number;
-    entityName: string;
+    projectId?: number;
     goalId?: number;
+    taskId?: number;
+    title: string;
   }>({
     open: false,
-    entityType: 'goal',
-    entityId: 0,
-    entityName: '',
+    title: '',
   });
 
   const openNotesModal = (
@@ -47,17 +40,33 @@ export const Project = () => {
     entityName: string,
     goalId?: number
   ) => {
-    setNotesModal({
+    const modalData: any = {
       open: true,
-      entityType,
-      entityId,
-      entityName,
-      goalId,
-    });
+      title: `Notes for ${entityName}`,
+      projectId: parseInt(id!),
+    };
+
+    if (entityType === 'goal') {
+      modalData.goalId = entityId;
+    } else {
+      modalData.taskId = entityId;
+      if (goalId) modalData.goalId = goalId;
+    }
+
+    setNotesModal(modalData);
   };
 
   const closeNotesModal = () => {
     setNotesModal((prev) => ({ ...prev, open: false }));
+  };
+
+  // Add a function to open project notes modal
+  const openProjectNotesModal = () => {
+    setNotesModal({
+      open: true,
+      projectId: parseInt(id!),
+      title: 'Project Notes',
+    });
   };
 
   useEffect(() => {
@@ -235,6 +244,7 @@ export const Project = () => {
           projectId={id!}
           projectData={projectData}
           formatDate={formatDate}
+          onOpenProjectNotes={openProjectNotesModal}
         />
 
         {goals && (
@@ -251,11 +261,11 @@ export const Project = () => {
       <NotesModal
         open={notesModal.open}
         onClose={closeNotesModal}
-        entityType={notesModal.entityType}
-        entityId={notesModal.entityId}
-        entityName={notesModal.entityName}
-        projectId={id!}
+        projectId={notesModal.projectId}
         goalId={notesModal.goalId}
+        taskId={notesModal.taskId}
+        title={notesModal.title}
+        userName={user?.username || ''}
       />
     </>
   );

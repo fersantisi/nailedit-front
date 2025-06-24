@@ -29,15 +29,7 @@ import {
   Save as SaveIcon,
   Cancel as CancelIcon,
 } from '@mui/icons-material';
-
-interface User {
-  id: number;
-  username: string;
-  email?: string;
-  role?: string;
-  createdAt?: string;
-  isActive?: boolean;
-}
+import { User } from '../../types';
 
 interface UserTableProps {
   onUserUpdate?: () => void;
@@ -59,8 +51,12 @@ export const UserTable: React.FC<UserTableProps> = ({ onUserUpdate }) => {
   const [formData, setFormData] = useState({
     username: '',
     email: '',
-    role: 'user',
   });
+
+  const [deleteDialog, setDeleteDialog] = useState<{
+    open: boolean;
+    userId: number | null;
+  }>({ open: false, userId: null });
 
   const fetchUsers = async () => {
     try {
@@ -75,7 +71,12 @@ export const UserTable: React.FC<UserTableProps> = ({ onUserUpdate }) => {
 
       if (response.ok) {
         const data = await response.json();
-        setUsers(data);
+        setUsers(
+          data.map((user: any) => ({
+            ...user,
+            createdAt: user.createdAt || user.created_at || undefined,
+          }))
+        );
       } else {
         setError('Failed to fetch users');
       }
@@ -96,7 +97,6 @@ export const UserTable: React.FC<UserTableProps> = ({ onUserUpdate }) => {
     setFormData({
       username: user.username,
       email: user.email || '',
-      role: user.role || 'user',
     });
     setOpenDialog(true);
   };
@@ -107,7 +107,6 @@ export const UserTable: React.FC<UserTableProps> = ({ onUserUpdate }) => {
     setFormData({
       username: '',
       email: '',
-      role: 'user',
     });
   };
 
@@ -128,7 +127,10 @@ export const UserTable: React.FC<UserTableProps> = ({ onUserUpdate }) => {
             'Content-Type': 'application/json',
           },
           credentials: 'include',
-          body: JSON.stringify(formData),
+          body: JSON.stringify({
+            username: formData.username,
+            email: formData.email,
+          }),
         }
       );
 
@@ -159,14 +161,15 @@ export const UserTable: React.FC<UserTableProps> = ({ onUserUpdate }) => {
     }
   };
 
-  const handleDeleteUser = async (userId: number) => {
-    if (!window.confirm('Are you sure you want to delete this user?')) {
-      return;
-    }
+  const handleDeleteUser = (userId: number) => {
+    setDeleteDialog({ open: true, userId });
+  };
 
+  const confirmDeleteUser = async () => {
+    if (!deleteDialog.userId) return;
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_SERVER_URL}/admin/users/${userId}`,
+        `${import.meta.env.VITE_SERVER_URL}/admin/users/${deleteDialog.userId}`,
         {
           method: 'DELETE',
           credentials: 'include',
@@ -195,7 +198,13 @@ export const UserTable: React.FC<UserTableProps> = ({ onUserUpdate }) => {
         message: 'Error deleting user',
         severity: 'error',
       });
+    } finally {
+      setDeleteDialog({ open: false, userId: null });
     }
+  };
+
+  const handleCloseDeleteDialog = () => {
+    setDeleteDialog({ open: false, userId: null });
   };
 
   const handleCloseSnackbar = () => {
@@ -224,7 +233,7 @@ export const UserTable: React.FC<UserTableProps> = ({ onUserUpdate }) => {
   }
 
   return (
-    <Box sx={{ width: '100%' }}>
+    <Box sx={{ width: '1036.8px', maxWidth: '100%', mx: 'auto' }}>
       <Box
         sx={{
           display: 'flex',
@@ -239,86 +248,82 @@ export const UserTable: React.FC<UserTableProps> = ({ onUserUpdate }) => {
       </Box>
 
       <TableContainer component={Paper} elevation={2}>
-        <Table sx={{ minWidth: 650 }} aria-label="user management table">
+        <Table sx={{ minWidth: 400 }} aria-label="user management table">
           <TableHead>
             <TableRow sx={{ backgroundColor: 'primary.main' }}>
-              <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>
+              <TableCell
+                align="center"
+                sx={{ color: 'white', fontWeight: 'bold' }}
+              >
                 ID
               </TableCell>
-              <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>
+              <TableCell
+                align="center"
+                sx={{ color: 'white', fontWeight: 'bold' }}
+              >
                 Username
               </TableCell>
-              <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>
+              <TableCell
+                align="center"
+                sx={{ color: 'white', fontWeight: 'bold' }}
+              >
                 Email
               </TableCell>
-              <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>
-                Role
-              </TableCell>
-              <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>
-                Status
-              </TableCell>
-              <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>
+              <TableCell
+                align="center"
+                sx={{ color: 'white', fontWeight: 'bold' }}
+              >
                 Created
               </TableCell>
-              <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>
+              <TableCell
+                align="center"
+                sx={{ color: 'white', fontWeight: 'bold' }}
+              >
                 Actions
               </TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {users.map((user) => (
-              <TableRow key={user.id} hover>
-                <TableCell>{user.id}</TableCell>
-                <TableCell>{user.username}</TableCell>
-                <TableCell>{user.email || 'N/A'}</TableCell>
-                <TableCell>
-                  <Chip
-                    label={user.role || 'user'}
-                    color={user.role === 'admin' ? 'error' : 'default'}
-                    size="small"
-                  />
-                </TableCell>
-                <TableCell>
-                  <Chip
-                    label={user.isActive ? 'Active' : 'Inactive'}
-                    color={user.isActive ? 'success' : 'default'}
-                    size="small"
-                  />
-                </TableCell>
-                <TableCell>
-                  {user.createdAt
-                    ? new Date(user.createdAt).toLocaleDateString()
-                    : 'N/A'}
-                </TableCell>
-                <TableCell>
-                  <Box sx={{ display: 'flex', gap: 1 }}>
-                    <Tooltip title="View User">
-                      <IconButton size="small" color="info">
-                        <ViewIcon />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Edit User">
-                      <IconButton
-                        size="small"
-                        color="primary"
-                        onClick={() => handleOpenDialog(user)}
-                      >
-                        <EditIcon />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Delete User">
-                      <IconButton
-                        size="small"
-                        color="error"
-                        onClick={() => handleDeleteUser(user.id)}
-                      >
-                        <DeleteIcon />
-                      </IconButton>
-                    </Tooltip>
-                  </Box>
-                </TableCell>
-              </TableRow>
-            ))}
+            {[...users]
+              .sort((a, b) => a.id - b.id)
+              .map((user) => (
+                <TableRow key={user.id} hover>
+                  <TableCell align="center">{user.id}</TableCell>
+                  <TableCell align="center">{user.username}</TableCell>
+                  <TableCell align="center">{user.email || 'N/A'}</TableCell>
+                  <TableCell align="center">
+                    {user.createdAt
+                      ? new Date(user.createdAt).toLocaleDateString()
+                      : 'N/A'}
+                  </TableCell>
+                  <TableCell align="center">
+                    {user.username !== 'admin' ? (
+                      <>
+                        <Tooltip title="Edit">
+                          <IconButton
+                            onClick={() => handleOpenDialog(user)}
+                            size="small"
+                            color="primary"
+                          >
+                            <EditIcon />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Delete">
+                          <IconButton
+                            onClick={() => handleDeleteUser(user.id)}
+                            size="small"
+                            color="error"
+                          >
+                            <DeleteIcon />
+                          </IconButton>
+                        </Tooltip>
+                      </>
+                    ) : (
+                      <Box sx={{ height: 40 }} />
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
           </TableBody>
         </Table>
       </TableContainer>
@@ -347,19 +352,6 @@ export const UserTable: React.FC<UserTableProps> = ({ onUserUpdate }) => {
               onChange={(e) => handleInputChange('email', e.target.value)}
               fullWidth
             />
-            <TextField
-              label="Role"
-              select
-              value={formData.role}
-              onChange={(e) => handleInputChange('role', e.target.value)}
-              fullWidth
-              SelectProps={{
-                native: true,
-              }}
-            >
-              <option value="user">User</option>
-              <option value="admin">Admin</option>
-            </TextField>
           </Box>
         </DialogContent>
         <DialogActions>
@@ -373,6 +365,26 @@ export const UserTable: React.FC<UserTableProps> = ({ onUserUpdate }) => {
             disabled={!formData.username}
           >
             Save
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialog.open} onClose={handleCloseDeleteDialog}>
+        <DialogTitle>Confirm Deletion</DialogTitle>
+        <DialogContent>
+          <Typography>Are you sure you want to delete this user?</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={handleCloseDeleteDialog}
+            color="primary"
+            variant="outlined"
+          >
+            Cancel
+          </Button>
+          <Button onClick={confirmDeleteUser} color="error" variant="contained">
+            Delete
           </Button>
         </DialogActions>
       </Dialog>

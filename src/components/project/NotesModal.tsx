@@ -3,7 +3,6 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
-  DialogActions,
   Button,
   TextField,
   Box,
@@ -11,12 +10,10 @@ import {
   IconButton,
   List,
   ListItem,
-  ListItemText,
-  ListItemSecondaryAction,
-  Chip,
   Alert,
   Snackbar,
   CircularProgress,
+  Divider,
 } from '@mui/material';
 import {
   Close as CloseIcon,
@@ -29,7 +26,8 @@ import {
 
 interface Note {
   id: number;
-  content: string;
+  name: string;
+  description: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -37,27 +35,27 @@ interface Note {
 interface NotesModalProps {
   open: boolean;
   onClose: () => void;
-  entityType: 'goal' | 'task';
-  entityId: number;
-  entityName: string;
-  projectId: string;
-  goalId?: number; // Required for tasks
+  projectId?: number;
+  goalId?: number;
+  taskId?: number;
+  title: string;
+  userName: string;
 }
 
-export const NotesModal: React.FC<NotesModalProps> = ({
+const NotesModal: React.FC<NotesModalProps> = ({
   open,
   onClose,
-  entityType,
-  entityId,
-  entityName,
   projectId,
   goalId,
+  taskId,
+  title,
+  userName,
 }) => {
   const [notes, setNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState(false);
-  const [newNote, setNewNote] = useState('');
-  const [editingNote, setEditingNote] = useState<Note | null>(null);
-  const [editContent, setEditContent] = useState('');
+  const [newNote, setNewNote] = useState({ name: '', description: '' });
+  const [editingNote, setEditingNote] = useState<number | null>(null);
+  const [editForm, setEditForm] = useState({ name: '', description: '' });
   const [alert, setAlert] = useState<{
     open: boolean;
     message: string;
@@ -68,25 +66,68 @@ export const NotesModal: React.FC<NotesModalProps> = ({
     severity: 'info',
   });
 
-  const getNotesEndpoint = () => {
-    if (entityType === 'goal') {
-      return `${import.meta.env.VITE_SERVER_URL}/project/${projectId}/goal/${entityId}/notes`;
-    } else {
-      return `${import.meta.env.VITE_SERVER_URL}/project/${projectId}/goal/${goalId}/task/${entityId}/notes`;
+  // Helper functions for endpoints
+  const getFetchNotesEndpoint = () => {
+    if (taskId && goalId && projectId) {
+      return `${import.meta.env.VITE_SERVER_URL}/project/${projectId}/goal/${goalId}/task/${taskId}/notes`;
+    } else if (goalId && projectId) {
+      return `${import.meta.env.VITE_SERVER_URL}/project/${projectId}/goal/${goalId}/notes`;
+    } else if (projectId) {
+      return `${import.meta.env.VITE_SERVER_URL}/project/${projectId}/notes`;
     }
+    return '';
+  };
+
+  const getCreateNoteEndpoint = () => {
+    if (taskId && goalId && projectId) {
+      return `${import.meta.env.VITE_SERVER_URL}/project/${projectId}/goal/${goalId}/task/${taskId}/createNote`;
+    } else if (goalId && projectId) {
+      return `${import.meta.env.VITE_SERVER_URL}/project/${projectId}/goal/${goalId}/createNote`;
+    } else if (projectId) {
+      return `${import.meta.env.VITE_SERVER_URL}/project/${projectId}/createNote`;
+    }
+    return '';
+  };
+
+  const getUpdateNoteEndpoint = (noteId: number) => {
+    if (taskId && goalId && projectId) {
+      return `${import.meta.env.VITE_SERVER_URL}/project/${projectId}/goal/${goalId}/task/${taskId}/note/${noteId}/updateNote`;
+    } else if (goalId && projectId) {
+      return `${import.meta.env.VITE_SERVER_URL}/project/${projectId}/goal/${goalId}/note/${noteId}/updateNote`;
+    } else if (projectId) {
+      return `${import.meta.env.VITE_SERVER_URL}/project/${projectId}/note/${noteId}/updateNote`;
+    }
+    return '';
+  };
+
+  const getDeleteNoteEndpoint = (noteId: number) => {
+    if (taskId && goalId && projectId) {
+      return `${import.meta.env.VITE_SERVER_URL}/project/${projectId}/goal/${goalId}/task/${taskId}/note/${noteId}`;
+    } else if (goalId && projectId) {
+      return `${import.meta.env.VITE_SERVER_URL}/project/${projectId}/goal/${goalId}/note/${noteId}`;
+    } else if (projectId) {
+      return `${import.meta.env.VITE_SERVER_URL}/project/${projectId}/note/${noteId}`;
+    }
+    return '';
   };
 
   const fetchNotes = async () => {
+    if (!open) return;
+    const endpoint = getFetchNotesEndpoint();
+    if (!endpoint) return;
+    setLoading(true);
     try {
-      setLoading(true);
-      const response = await fetch(getNotesEndpoint(), {
-        method: 'GET',
+      const response = await fetch(endpoint, {
         credentials: 'include',
       });
-
       if (response.ok) {
-        const data = await response.json();
-        setNotes(data);
+        const text = await response.text();
+        if (!text) {
+          setNotes([]);
+        } else {
+          const data = JSON.parse(text);
+          setNotes(data);
+        }
       } else {
         console.error('Failed to fetch notes');
       }
@@ -98,89 +139,105 @@ export const NotesModal: React.FC<NotesModalProps> = ({
   };
 
   useEffect(() => {
-    if (open) {
-      fetchNotes();
-    }
-  }, [open, entityId]);
+    fetchNotes();
+  }, [open, projectId, goalId, taskId]);
 
-  const handleAddNote = async () => {
-    if (!newNote.trim()) return;
-
+  const createNote = async () => {
+    if (!newNote.description.trim()) return;
+    const endpoint = getCreateNoteEndpoint();
+    if (!endpoint) return;
     try {
-      const response = await fetch(getNotesEndpoint(), {
+      const noteData: any = {
+        name: userName,
+        description: newNote.description.trim(),
+      };
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         credentials: 'include',
-        body: JSON.stringify({ content: newNote.trim() }),
+        body: JSON.stringify(noteData),
       });
-
       if (response.ok) {
-        const addedNote = await response.json();
-        setNotes((prev) => [...prev, addedNote]);
-        setNewNote('');
+        setNewNote({ name: '', description: '' });
         setAlert({
           open: true,
           message: 'Note added successfully!',
           severity: 'success',
         });
+        fetchNotes();
       } else {
-        throw new Error('Failed to add note');
+        setAlert({
+          open: true,
+          message: 'Failed to create note',
+          severity: 'error',
+        });
       }
     } catch (error) {
       setAlert({
         open: true,
-        message: 'Failed to add note',
+        message: 'Error creating note',
         severity: 'error',
       });
     }
   };
 
-  const handleEditNote = async () => {
-    if (!editingNote || !editContent.trim()) return;
-
+  const updateNote = async (noteId: number) => {
+    if (!editForm.description.trim()) return;
+    const endpoint = getUpdateNoteEndpoint(noteId);
+    if (!endpoint) return;
     try {
-      const response = await fetch(`${getNotesEndpoint()}/${editingNote.id}`, {
+      const noteData: any = {
+        description: editForm.description.trim(),
+      };
+      const response = await fetch(endpoint, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
         credentials: 'include',
-        body: JSON.stringify({ content: editContent.trim() }),
+        body: JSON.stringify(noteData),
       });
-
       if (response.ok) {
         const updatedNote = await response.json();
         setNotes((prev) =>
-          prev.map((note) => (note.id === editingNote.id ? updatedNote : note))
+          prev.map((note) => (note.id === noteId ? updatedNote : note))
         );
         setEditingNote(null);
-        setEditContent('');
+        setEditForm({ name: '', description: '' });
         setAlert({
           open: true,
           message: 'Note updated successfully!',
           severity: 'success',
         });
       } else {
-        throw new Error('Failed to update note');
+        setAlert({
+          open: true,
+          message: 'Failed to update note',
+          severity: 'error',
+        });
       }
     } catch (error) {
       setAlert({
         open: true,
-        message: 'Failed to update note',
+        message: 'Error updating note',
         severity: 'error',
       });
     }
   };
 
-  const handleDeleteNote = async (noteId: number) => {
+  const deleteNote = async (noteId: number) => {
+    if (!window.confirm('Are you sure you want to delete this note?')) {
+      return;
+    }
+    const endpoint = getDeleteNoteEndpoint(noteId);
+    if (!endpoint) return;
     try {
-      const response = await fetch(`${getNotesEndpoint()}/${noteId}`, {
+      const response = await fetch(endpoint, {
         method: 'DELETE',
         credentials: 'include',
       });
-
       if (response.ok) {
         setNotes((prev) => prev.filter((note) => note.id !== noteId));
         setAlert({
@@ -189,25 +246,29 @@ export const NotesModal: React.FC<NotesModalProps> = ({
           severity: 'success',
         });
       } else {
-        throw new Error('Failed to delete note');
+        setAlert({
+          open: true,
+          message: 'Failed to delete note',
+          severity: 'error',
+        });
       }
     } catch (error) {
       setAlert({
         open: true,
-        message: 'Failed to delete note',
+        message: 'Error deleting note',
         severity: 'error',
       });
     }
   };
 
   const startEditing = (note: Note) => {
-    setEditingNote(note);
-    setEditContent(note.content);
+    setEditingNote(note.id);
+    setEditForm({ name: note.name, description: note.description });
   };
 
   const cancelEditing = () => {
     setEditingNote(null);
-    setEditContent('');
+    setEditForm({ name: '', description: '' });
   };
 
   const formatDate = (dateString: string) => {
@@ -237,78 +298,104 @@ export const NotesModal: React.FC<NotesModalProps> = ({
       >
         <DialogTitle>
           <Box
-            sx={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-            }}
+            display="flex"
+            justifyContent="space-between"
+            alignItems="center"
           >
-            <Typography variant="h6">
-              Notes for {entityType}: {entityName}
-            </Typography>
-            <IconButton onClick={onClose}>
+            <Typography variant="h6">{title}</Typography>
+            <IconButton onClick={onClose} size="small">
               <CloseIcon />
             </IconButton>
           </Box>
         </DialogTitle>
 
-        <DialogContent
-          sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}
-        >
-          {/* Add new note */}
-          <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
-            <TextField
-              fullWidth
-              multiline
-              rows={2}
-              placeholder="Add a new note..."
-              value={newNote}
-              onChange={(e) => setNewNote(e.target.value)}
-              onKeyPress={(e) => {
-                if (e.key === 'Enter' && e.ctrlKey) {
-                  handleAddNote();
-                }
-              }}
-            />
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              onClick={handleAddNote}
-              disabled={!newNote.trim()}
-              sx={{ minWidth: 'fit-content' }}
-            >
-              Add
-            </Button>
-          </Box>
+        <DialogContent dividers>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            {/* Create new note */}
+            <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
+              <Box
+                sx={{
+                  flex: 1,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 1,
+                }}
+              >
+                <TextField
+                  fullWidth
+                  multiline
+                  rows={3}
+                  placeholder="Write your note here..."
+                  value={newNote.description}
+                  onChange={(e) =>
+                    setNewNote((prev) => ({
+                      ...prev,
+                      description: e.target.value,
+                    }))
+                  }
+                  onKeyPress={(e) => {
+                    if (
+                      e.key === 'Enter' &&
+                      e.ctrlKey &&
+                      newNote.description.trim()
+                    ) {
+                      createNote();
+                    }
+                  }}
+                />
+              </Box>
+              <Button
+                variant="contained"
+                startIcon={<AddIcon />}
+                onClick={createNote}
+                disabled={!newNote.description.trim()}
+                sx={{ minWidth: 'fit-content' }}
+              >
+                Add Note
+              </Button>
+            </Box>
 
-          {/* Notes list */}
-          <Box sx={{ flex: 1, overflow: 'auto' }}>
+            <Divider />
+
+            {/* Notes list */}
             {loading ? (
               <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
                 <CircularProgress />
               </Box>
-            ) : notes.length > 0 ? (
-              <List>
+            ) : notes.length === 0 ? (
+              <Box sx={{ textAlign: 'center', p: 3 }}>
+                <Typography variant="body2" color="text.secondary">
+                  No notes yet. Create your first note above!
+                </Typography>
+              </Box>
+            ) : (
+              <List sx={{ width: '100%' }}>
                 {notes.map((note) => (
                   <ListItem
                     key={note.id}
                     sx={{
-                      border: '1px solid',
-                      borderColor: 'divider',
-                      borderRadius: 1,
-                      mb: 1,
                       flexDirection: 'column',
                       alignItems: 'stretch',
+                      border: '1px solid #e0e0e0',
+                      borderRadius: 1,
+                      mb: 1,
+                      p: 2,
                     }}
                   >
-                    {editingNote?.id === note.id ? (
+                    {editingNote === note.id ? (
                       <Box sx={{ width: '100%' }}>
                         <TextField
                           fullWidth
                           multiline
                           rows={3}
-                          value={editContent}
-                          onChange={(e) => setEditContent(e.target.value)}
+                          placeholder="Note content..."
+                          value={editForm.description}
+                          onChange={(e) =>
+                            setEditForm((prev) => ({
+                              ...prev,
+                              description: e.target.value,
+                            }))
+                          }
                           sx={{ mb: 1 }}
                         />
                         <Box
@@ -319,51 +406,40 @@ export const NotesModal: React.FC<NotesModalProps> = ({
                           }}
                         >
                           <Button
-                            size="small"
-                            startIcon={<SaveIcon />}
-                            onClick={handleEditNote}
-                            disabled={!editContent.trim()}
-                          >
-                            Save
-                          </Button>
-                          <Button
+                            variant="outlined"
                             size="small"
                             startIcon={<CancelIcon />}
                             onClick={cancelEditing}
                           >
                             Cancel
                           </Button>
+                          <Button
+                            variant="contained"
+                            size="small"
+                            startIcon={<SaveIcon />}
+                            onClick={() => updateNote(note.id)}
+                            disabled={!editForm.description.trim()}
+                          >
+                            Save
+                          </Button>
                         </Box>
                       </Box>
                     ) : (
-                      <>
-                        <ListItemText
-                          primary={
-                            <Typography
-                              variant="body1"
-                              sx={{ whiteSpace: 'pre-wrap' }}
-                            >
-                              {note.content}
-                            </Typography>
-                          }
-                          secondary={
-                            <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
-                              <Chip
-                                label={`Created: ${formatDate(note.createdAt)}`}
-                                size="small"
-                                variant="outlined"
-                              />
-                              {note.updatedAt !== note.createdAt && (
-                                <Chip
-                                  label={`Updated: ${formatDate(note.updatedAt)}`}
-                                  size="small"
-                                  variant="outlined"
-                                />
-                              )}
-                            </Box>
-                          }
-                        />
-                        <ListItemSecondaryAction>
+                      <Box sx={{ width: '100%' }}>
+                        <Box
+                          sx={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'flex-start',
+                            mb: 1,
+                          }}
+                        >
+                          <Typography
+                            variant="subtitle1"
+                            sx={{ fontWeight: 'medium' }}
+                          >
+                            {note.name || 'Untitled Note'}
+                          </Typography>
                           <Box sx={{ display: 'flex', gap: 0.5 }}>
                             <IconButton
                               size="small"
@@ -373,37 +449,45 @@ export const NotesModal: React.FC<NotesModalProps> = ({
                             </IconButton>
                             <IconButton
                               size="small"
-                              onClick={() => handleDeleteNote(note.id)}
+                              onClick={() => deleteNote(note.id)}
+                              color="error"
                             >
                               <DeleteIcon fontSize="small" />
                             </IconButton>
                           </Box>
-                        </ListItemSecondaryAction>
-                      </>
+                        </Box>
+                        {note.description && (
+                          <Typography
+                            variant="body2"
+                            sx={{ mb: 1, whiteSpace: 'pre-wrap' }}
+                          >
+                            {note.description}
+                          </Typography>
+                        )}
+                        <Typography variant="caption" color="text.secondary">
+                          Created: {formatDate(note.createdAt)}
+                          {note.updatedAt !== note.createdAt && (
+                            <span>
+                              {' '}
+                              • Updated: {formatDate(note.updatedAt)}
+                            </span>
+                          )}
+                        </Typography>
+                      </Box>
                     )}
                   </ListItem>
                 ))}
               </List>
-            ) : (
-              <Box sx={{ textAlign: 'center', p: 3 }}>
-                <Typography variant="body2" color="text.secondary">
-                  No notes yet. Add your first note!
-                </Typography>
-              </Box>
             )}
           </Box>
         </DialogContent>
-
-        <DialogActions>
-          <Button onClick={onClose}>Close</Button>
-        </DialogActions>
       </Dialog>
 
       <Snackbar
         open={alert.open}
         autoHideDuration={6000}
         onClose={handleCloseAlert}
-        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
       >
         <Alert
           onClose={handleCloseAlert}
@@ -416,3 +500,5 @@ export const NotesModal: React.FC<NotesModalProps> = ({
     </>
   );
 };
+
+export default NotesModal;

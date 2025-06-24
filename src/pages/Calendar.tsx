@@ -4,15 +4,15 @@ import {
   Typography,
   CircularProgress,
   Alert,
-  Grid,
   Chip,
   Paper,
   Container,
+  Grid,
 } from '@mui/material';
 import { CalendarMonth as CalendarIcon } from '@mui/icons-material';
 import { Navbar } from '../components/ui/navbar';
 import { useEffect, useState } from 'react';
-import { User, Project, Goal, Task } from '../types';
+import { User, Goal, Task } from '../types';
 import { useNavigate } from 'react-router-dom';
 
 interface CalendarItem {
@@ -101,7 +101,7 @@ export const Calendar = () => {
           throw new Error('Failed to fetch calendar data');
         }
 
-        const projects: Project[] = await projectsResponse.json();
+        const projects: any[] = await projectsResponse.json();
         const goals: Goal[] = await goalsResponse.json();
         const tasks: Task[] = await tasksResponse.json();
 
@@ -216,7 +216,7 @@ export const Calendar = () => {
     }
   };
 
-  const getTypeColor = (type: 'project' | 'goal' | 'task') => {
+  const getTypeColor = (type: 'project' | 'goal' | 'task' | 'all') => {
     switch (type) {
       case 'project':
         return '#9c27b0';
@@ -224,6 +224,8 @@ export const Calendar = () => {
         return '#3f51b5';
       case 'task':
         return '#009688';
+      case 'all':
+        return '#1976d2';
       default:
         return '#757575';
     }
@@ -322,17 +324,32 @@ export const Calendar = () => {
         }}
       >
         <Box sx={{ mb: 4 }}>
-          <Typography
-            variant="h4"
-            component="h1"
-            gutterBottom
-            sx={{ fontWeight: 'bold' }}
-          >
-            Calendar
-          </Typography>
-          <Typography variant="body1" color="text.secondary">
-            View all upcoming deadlines
-          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+            <Box
+              sx={{
+                backgroundColor: 'primary.main',
+                borderRadius: '50%',
+                p: 1.5,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <CalendarIcon sx={{ color: 'white', fontSize: '1.5rem' }} />
+            </Box>
+            <Box>
+              <Typography
+                variant="h4"
+                component="h1"
+                sx={{ fontWeight: 'bold' }}
+              >
+                Calendar
+              </Typography>
+              <Typography variant="body1" color="text.secondary">
+                View all upcoming deadlines
+              </Typography>
+            </Box>
+          </Box>
         </Box>
 
         {calendarItems.length === 0 ? (
@@ -480,8 +497,11 @@ export const Calendar = () => {
                     onClick={() => handleFilterClick('all')}
                     sx={{
                       backgroundColor:
-                        activeFilter === 'all' ? 'primary.main' : 'transparent',
-                      color: activeFilter === 'all' ? 'white' : 'primary.main',
+                        activeFilter === 'all'
+                          ? getTypeColor('all')
+                          : 'transparent',
+                      color:
+                        activeFilter === 'all' ? 'white' : getTypeColor('all'),
                       fontWeight: 'bold',
                       border: `2px solid ${getTypeColor('all')}`,
                       '&:hover': {
@@ -524,7 +544,14 @@ export const Calendar = () => {
                       </Typography>
                       <Grid container spacing={2}>
                         {groupedItems[date].map((item) => (
-                          <Grid item xs={12} sm={6} md={4} key={item.id}>
+                          <Box
+                            key={item.id}
+                            sx={{
+                              width: { xs: '100%', sm: '50%', md: '33.33%' },
+                              p: 1,
+                              boxSizing: 'border-box',
+                            }}
+                          >
                             <Card
                               variant="outlined"
                               sx={{
@@ -593,7 +620,7 @@ export const Calendar = () => {
                                 </Typography>
                               )}
                             </Card>
-                          </Grid>
+                          </Box>
                         ))}
                       </Grid>
                     </Paper>

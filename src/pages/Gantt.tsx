@@ -325,17 +325,32 @@ export const Gantt = () => {
         }}
       >
         <Box sx={{ mb: 4 }}>
-          <Typography
-            variant="h4"
-            component="h1"
-            gutterBottom
-            sx={{ fontWeight: 'bold' }}
-          >
-            Gantt Chart
-          </Typography>
-          <Typography variant="body1" color="text.secondary">
-            Timeline view of all project deadlines
-          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+            <Box
+              sx={{
+                backgroundColor: 'primary.main',
+                borderRadius: '50%',
+                p: 1.5,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <TimelineIcon sx={{ color: 'white', fontSize: '1.5rem' }} />
+            </Box>
+            <Box>
+              <Typography
+                variant="h4"
+                component="h1"
+                sx={{ fontWeight: 'bold' }}
+              >
+                Gantt Chart
+              </Typography>
+              <Typography variant="body1" color="text.secondary">
+                Timeline view of all project deadlines
+              </Typography>
+            </Box>
+          </Box>
         </Box>
 
         {calendarItems.length === 0 ? (

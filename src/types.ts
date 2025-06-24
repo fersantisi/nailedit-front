@@ -1,13 +1,18 @@
 export type User = {
   id: number;
   username: string;
+  email?: string;
+  role?: string;
+  createdAt?: string;
+  isActive?: boolean;
 };
 
 export type Goal = {
   id: number;
   name: string;
-  description: string;
-  dueDate: string;
+  projectId: number;
+  description?: string;
+  dueDate?: string;
   tasks?: Task[];
 };
 
@@ -16,9 +21,9 @@ export type Task = {
   goalId: number;
   projectId: number;
   name: string;
-  description: string;
-  label: string;
-  dueDate: string;
+  description?: string;
+  label?: string;
+  dueDate?: string;
 };
 
 export type Resource = {
