@@ -11,6 +11,7 @@ import {
   CalendarToday as CalendarIcon,
   Flag as PriorityIcon,
   Folder as ProjectIcon,
+  Flag as GoalIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { Task } from '../../types';
@@ -20,6 +21,7 @@ interface HomeTaskCardProps {
   task: Task & {
     projectName?: string;
     projectId?: number;
+    goalName?: string;
   };
 }
 
@@ -62,22 +64,60 @@ export const HomeTaskCard = ({ task }: HomeTaskCardProps) => {
         }}
       >
         <CardContent sx={{ flexGrow: 1, p: 1.5 }}>
-          {/* Project Name */}
-          {task.projectName && (
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-              <ProjectIcon color="action" sx={{ mr: 0.5, fontSize: '1rem' }} />
-              <Typography
-                variant="caption"
-                color="text.secondary"
-                sx={{
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                  fontWeight: 'medium',
-                }}
-              >
-                {task.projectName}
-              </Typography>
+          {/* Project > Goal Name */}
+          {(task.projectName || task.goalName) && (
+            <Box
+              sx={{ display: 'flex', alignItems: 'center', mb: 1, gap: 0.5 }}
+            >
+              {task.projectName && (
+                <>
+                  <ProjectIcon
+                    color="action"
+                    sx={{ fontSize: '1rem', mr: 0.2 }}
+                  />
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      fontWeight: 'medium',
+                    }}
+                  >
+                    {task.projectName}
+                  </Typography>
+                </>
+              )}
+              {task.projectName && task.goalName && (
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{ mx: 0.5 }}
+                >
+                  &gt;
+                </Typography>
+              )}
+              {task.goalName && (
+                <>
+                  <GoalIcon
+                    color="primary"
+                    sx={{ fontSize: '1rem', mr: 0.2 }}
+                  />
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      fontWeight: 'medium',
+                    }}
+                  >
+                    {task.goalName}
+                  </Typography>
+                </>
+              )}
             </Box>
           )}
 

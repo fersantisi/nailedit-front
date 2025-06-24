@@ -29,6 +29,14 @@ export const TasksList: React.FC<TasksListProps> = ({
 }) => {
   const navigate = useNavigate();
 
+  // Sort tasks by due date ascending (tasks without dueDate go last)
+  const sortedTasks = [...tasks].sort((a, b) => {
+    if (!a.dueDate && !b.dueDate) return 0;
+    if (!a.dueDate) return 1;
+    if (!b.dueDate) return -1;
+    return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+  });
+
   return (
     <Box>
       <Box
@@ -61,9 +69,9 @@ export const TasksList: React.FC<TasksListProps> = ({
         </Button>
       </Box>
 
-      {tasks.length > 0 ? (
+      {sortedTasks.length > 0 ? (
         <Box sx={{ mt: 1 }}>
-          {tasks.map((task: Task) => (
+          {sortedTasks.map((task: Task) => (
             <TaskItem
               key={task.id}
               task={task}

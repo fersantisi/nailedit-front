@@ -12,7 +12,7 @@ import {
 import { Timeline as TimelineIcon } from '@mui/icons-material';
 import { Navbar } from '../components/ui/navbar';
 import { useEffect, useState } from 'react';
-import { User, Project, Goal, Task } from '../types';
+import { User, Goal, Task } from '../types';
 import { useNavigate } from 'react-router-dom';
 
 interface CalendarItem {
@@ -98,7 +98,7 @@ export const Gantt = () => {
           throw new Error('Failed to fetch calendar data');
         }
 
-        const projects: Project[] = await projectsResponse.json();
+        const projects: any[] = await projectsResponse.json();
         const goals: Goal[] = await goalsResponse.json();
         const tasks: Task[] = await tasksResponse.json();
 
@@ -251,16 +251,26 @@ export const Gantt = () => {
 
   // Calculate timeline dimensions
   const getTimelineDimensions = () => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
     if (calendarItems.length === 0)
-      return { startDate: new Date(), endDate: new Date() };
+      return { startDate: new Date(today), endDate: new Date(today) };
 
     const dates = calendarItems.map((item) => new Date(item.dueDate));
-    const startDate = new Date(Math.min(...dates.map((d) => d.getTime())));
-    const endDate = new Date(Math.max(...dates.map((d) => d.getTime())));
+    const minDate = new Date(Math.min(...dates.map((d) => d.getTime())));
+    const maxDate = new Date(Math.max(...dates.map((d) => d.getTime())));
 
     // Add some padding
-    startDate.setDate(startDate.getDate() - 7);
-    endDate.setDate(endDate.getDate() + 7);
+    minDate.setDate(minDate.getDate() - 7);
+    maxDate.setDate(maxDate.getDate() + 7);
+
+    // Ensure today is always included in the range
+    const startDate = new Date(
+      Math.min(minDate.getTime(), today.getTime() - 7 * 24 * 60 * 60 * 1000)
+    );
+    const endDate = new Date(
+      Math.max(maxDate.getTime(), today.getTime() + 7 * 24 * 60 * 60 * 1000)
+    );
 
     return { startDate, endDate };
   };

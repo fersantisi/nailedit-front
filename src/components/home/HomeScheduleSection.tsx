@@ -7,6 +7,7 @@ import { Task } from '../../types';
 
 interface TaskWithProject extends Task {
   projectName?: string;
+  goalName?: string;
 }
 
 export const HomeScheduleSection = () => {
@@ -37,11 +38,12 @@ export const HomeScheduleSection = () => {
 
         const data: Task[] = await response.json();
 
-        // Fetch project information for each task
+        // Fetch project and goal information for each task
         const tasksWithProjects = await Promise.all(
           data.map(async (task) => {
+            let projectName = `Project ${task.projectId}`;
+            let goalName = task.goalId ? `Goal ${task.goalId}` : undefined;
             try {
-              // The task already has projectId, we just need to fetch the project name
               if (task.projectId) {
                 const projectResponse = await fetch(
                   `${import.meta.env.VITE_SERVER_URL}/project/${task.projectId}`,
@@ -50,28 +52,35 @@ export const HomeScheduleSection = () => {
                     credentials: 'include',
                   }
                 );
-
                 if (projectResponse.ok) {
                   const projectData = await projectResponse.json();
-                  return {
-                    ...task,
-                    projectName: projectData.name,
-                  };
+                  projectName = projectData.name;
                 }
               }
-
-              // Fallback if project fetch fails
-              return {
-                ...task,
-                projectName: `Project ${task.projectId}`,
-              };
+              if (task.goalId) {
+                const goalResponse = await fetch(
+                  `${import.meta.env.VITE_SERVER_URL}/project/${task.projectId}/goal/${task.goalId}`,
+                  {
+                    method: 'GET',
+                    credentials: 'include',
+                  }
+                );
+                if (goalResponse.ok) {
+                  const goalData = await goalResponse.json();
+                  goalName = goalData.name;
+                }
+              }
             } catch (error) {
-              console.error('Error fetching project info for task:', error);
-              return {
-                ...task,
-                projectName: `Project ${task.projectId}`,
-              };
+              console.error(
+                'Error fetching project/goal info for task:',
+                error
+              );
             }
+            return {
+              ...task,
+              projectName,
+              goalName,
+            };
           })
         );
 
