@@ -83,6 +83,14 @@ function App() {
               </GuestRoute>
             }
           />
+          <Route
+            path="/auth/recoverPassword/:token"
+            element={
+              <GuestRoute>
+                <PasswordReset />
+              </GuestRoute>
+            }
+          />
           <Route path="/profile" element={<Profile />} />
           <Route path="/calendar" element={<Calendar />} />
           <Route path="/gantt" element={<Gantt />} />
