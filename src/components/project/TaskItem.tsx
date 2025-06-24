@@ -1,5 +1,12 @@
 import React from 'react';
-import { Card, Box, Typography, Chip, IconButton } from '@mui/material';
+import {
+  Card,
+  Box,
+  Typography,
+  Chip,
+  IconButton,
+  Checkbox,
+} from '@mui/material';
 import {
   Edit as EditIcon,
   Note as NoteIcon,
@@ -32,6 +39,28 @@ export const TaskItem: React.FC<TaskItemProps> = ({
   onOpenNotes,
 }) => {
   const navigate = useNavigate();
+  const [completed, setCompleted] = React.useState(!!task.completed);
+  const [loading, setLoading] = React.useState(false);
+
+  const handleToggle = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SERVER_URL}/project/${projectId}/goal/${goalId}/task/${task.id}/complete`,
+        {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ completed: !completed }),
+        }
+      );
+      if (response.ok) {
+        setCompleted((prev) => !prev);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <Card
@@ -42,6 +71,8 @@ export const TaskItem: React.FC<TaskItemProps> = ({
         '&:hover': {
           backgroundColor: 'action.hover',
         },
+        opacity: completed ? 0.5 : 1,
+        textDecoration: completed ? 'line-through' : 'none',
       }}
     >
       <Box
@@ -51,38 +82,47 @@ export const TaskItem: React.FC<TaskItemProps> = ({
           alignItems: 'center',
         }}
       >
-        <Box sx={{ flex: 1 }}>
-          <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
-            {task.name}
-          </Typography>
-          {task.description && (
-            <Typography variant="caption" color="text.secondary">
-              {task.description}
+        <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Checkbox
+            checked={completed}
+            onChange={handleToggle}
+            disabled={loading}
+            size="small"
+            sx={{ p: 0.5 }}
+          />
+          <Box>
+            <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
+              {task.name}
             </Typography>
-          )}
-          <Box sx={{ display: 'flex', gap: 1, mt: 0.5 }}>
-            {task.label && (
-              <Chip
-                label={task.label}
-                size="small"
-                color={getPriorityColor(task.label) as any}
-                variant="outlined"
-              />
+            {task.description && (
+              <Typography variant="caption" color="text.secondary">
+                {task.description}
+              </Typography>
             )}
-            {task.dueDate && (
-              <Chip
-                icon={<CalendarIcon />}
-                label={formatDate(task.dueDate)}
-                size="small"
-                variant="outlined"
-                sx={{
-                  pl: 1,
-                  '& .MuiChip-icon': {
-                    ml: 0.5,
-                  },
-                }}
-              />
-            )}
+            <Box sx={{ display: 'flex', gap: 1, mt: 0.5 }}>
+              {task.label && (
+                <Chip
+                  label={task.label}
+                  size="small"
+                  color={getPriorityColor(task.label) as any}
+                  variant="outlined"
+                />
+              )}
+              {task.dueDate && (
+                <Chip
+                  icon={<CalendarIcon />}
+                  label={formatDate(task.dueDate)}
+                  size="small"
+                  variant="outlined"
+                  sx={{
+                    pl: 1,
+                    '& .MuiChip-icon': {
+                      ml: 0.5,
+                    },
+                  }}
+                />
+              )}
+            </Box>
           </Box>
         </Box>
         <Box sx={{ display: 'flex', gap: 0.5 }}>

@@ -14,6 +14,7 @@ export type Goal = {
   description?: string;
   dueDate?: string;
   tasks?: Task[];
+  completed?: boolean;
 };
 
 export type Task = {
@@ -24,6 +25,7 @@ export type Task = {
   description?: string;
   label?: string;
   dueDate?: string;
+  completed?: boolean;
 };
 
 export type Resource = {

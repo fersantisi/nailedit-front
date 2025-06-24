@@ -97,7 +97,8 @@ export const HomeScheduleSection = () => {
 
   // Filter tasks for upcoming and overdue
   const now = new Date();
-  const upcomingTasks = tasks
+  const incompleteTasks = tasks.filter((task) => !task.completed);
+  const upcomingTasks = incompleteTasks
     .filter((task) => {
       if (!task.dueDate) return false;
       const due = new Date(task.dueDate);
@@ -110,7 +111,7 @@ export const HomeScheduleSection = () => {
     })
     .slice(0, 4);
 
-  const overdueTasks = tasks
+  const overdueTasks = incompleteTasks
     .filter((task) => {
       if (!task.dueDate) return false;
       const due = new Date(task.dueDate);

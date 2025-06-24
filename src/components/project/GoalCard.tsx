@@ -7,6 +7,7 @@ import {
   Chip,
   IconButton,
   Divider,
+  Checkbox,
 } from '@mui/material';
 import {
   Edit as EditIcon,
@@ -39,6 +40,28 @@ export const GoalCard: React.FC<GoalCardProps> = ({
   onOpenNotes,
 }) => {
   const navigate = useNavigate();
+  const [completed, setCompleted] = React.useState(!!goal.completed);
+  const [loading, setLoading] = React.useState(false);
+
+  const handleToggle = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SERVER_URL}/project/${projectId}/goal/${goal.id}/complete`,
+        {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ completed: !completed }),
+        }
+      );
+      if (response.ok) {
+        setCompleted((prev) => !prev);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <Box
@@ -58,6 +81,8 @@ export const GoalCard: React.FC<GoalCardProps> = ({
             transform: 'translateY(-2px)',
             transition: 'all 0.2s ease-in-out',
           },
+          opacity: completed ? 0.5 : 1,
+          textDecoration: completed ? 'line-through' : 'none',
         }}
       >
         <CardContent sx={{ flexGrow: 1 }}>
@@ -69,9 +94,22 @@ export const GoalCard: React.FC<GoalCardProps> = ({
               mb: 2,
             }}
           >
-            <Typography variant="h6" component="h3" sx={{ fontWeight: 'bold' }}>
-              {goal.name}
-            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Checkbox
+                checked={completed}
+                onChange={handleToggle}
+                disabled={loading}
+                size="small"
+                sx={{ p: 0.5 }}
+              />
+              <Typography
+                variant="h6"
+                component="h3"
+                sx={{ fontWeight: 'bold' }}
+              >
+                {goal.name}
+              </Typography>
+            </Box>
             <Box sx={{ display: 'flex', gap: 0.5 }}>
               <IconButton
                 size="small"
