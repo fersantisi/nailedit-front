@@ -189,6 +189,8 @@ const NotesModal: React.FC<NotesModalProps> = ({
     if (!endpoint) return;
     try {
       const noteData: any = {
+        noteId: noteId,
+        name: editForm.name,
         description: editForm.description.trim(),
       };
       const response = await fetch(endpoint, {
@@ -211,6 +213,7 @@ const NotesModal: React.FC<NotesModalProps> = ({
           message: 'Note updated successfully!',
           severity: 'success',
         });
+        fetchNotes();
       } else {
         setAlert({
           open: true,
