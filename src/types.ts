@@ -36,3 +36,12 @@ export type Resource = {
   stock: number;
   category: string;
 };
+
+export type Stock = {
+  id: number;
+  itemName: string;
+  quantity: number;
+  unit: string;
+  reserved: number;
+  userid: number;
+};

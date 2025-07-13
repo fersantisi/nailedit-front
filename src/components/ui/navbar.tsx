@@ -12,6 +12,7 @@ import {
   Login as LoginIcon,
   PersonAdd as RegisterIcon,
   AdminPanelSettings as AdminIcon,
+  Inventory as InventoryIcon,
 } from '@mui/icons-material';
 
 interface NavbarProps {
@@ -82,6 +83,14 @@ export const Navbar = ({ user, isAdmin = false }: NavbarProps) => {
                   <GanttIcon sx={{ color: 'white' }} />
                   <Typography variant="h6" component="div">
                     Gantt
+                  </Typography>
+                </Box>
+              </NavbarItem>
+              <NavbarItem to="/stock">
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <InventoryIcon sx={{ color: 'white' }} />
+                  <Typography variant="h6" component="div">
+                    Stock
                   </Typography>
                 </Box>
               </NavbarItem>
