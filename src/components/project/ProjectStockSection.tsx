@@ -419,8 +419,17 @@ export const ProjectStockSection: React.FC<ProjectStockSectionProps> = ({
 
   if (loading) {
     return (
-      <Card sx={{ backgroundColor: '#4c4a52', mb: 3 }}>
-        <CardContent>
+      <Card
+        sx={{
+          backgroundColor: '#4c4a52',
+          mb: 3,
+          width: '100%',
+          maxWidth: '1200px',
+          mx: 'auto',
+          overflow: 'hidden',
+        }}
+      >
+        <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
           <Typography variant="h6" sx={{ color: '#e2e2e2' }}>
             Loading stock reservations...
           </Typography>
@@ -431,8 +440,17 @@ export const ProjectStockSection: React.FC<ProjectStockSectionProps> = ({
 
   return (
     <>
-      <Card sx={{ backgroundColor: '#4c4a52', mb: 3 }}>
-        <CardContent>
+      <Card
+        sx={{
+          backgroundColor: '#4c4a52',
+          mb: 3,
+          width: '100%',
+          maxWidth: '1200px',
+          mx: 'auto',
+          overflow: 'hidden',
+        }}
+      >
+        <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
           <Box
             sx={{
               display: 'flex',
@@ -482,9 +500,13 @@ export const ProjectStockSection: React.FC<ProjectStockSectionProps> = ({
           ) : (
             <TableContainer
               component={Paper}
-              sx={{ backgroundColor: '#2e2e2e' }}
+              sx={{
+                backgroundColor: '#2e2e2e',
+                width: '100%',
+                overflowX: 'auto',
+              }}
             >
-              <Table size="small">
+              <Table size="small" sx={{ width: '100%', minWidth: 500 }}>
                 <TableHead>
                   <TableRow>
                     <TableCell sx={{ color: '#e2e2e2', fontWeight: 'bold' }}>
@@ -580,9 +602,14 @@ export const ProjectStockSection: React.FC<ProjectStockSectionProps> = ({
 
               <TableContainer
                 component={Paper}
-                sx={{ backgroundColor: '#2e2e2e', mb: 3 }}
+                sx={{
+                  backgroundColor: '#2e2e2e',
+                  mb: 3,
+                  width: '100%',
+                  overflowX: 'auto',
+                }}
               >
-                <Table size="small">
+                <Table size="small" sx={{ width: '100%', minWidth: 500 }}>
                   <TableHead>
                     <TableRow>
                       <TableCell sx={{ color: '#e2e2e2', fontWeight: 'bold' }}>

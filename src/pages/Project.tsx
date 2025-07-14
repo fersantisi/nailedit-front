@@ -7,6 +7,7 @@ import NotesModal from '../components/project/NotesModal';
 import { ProjectHeader } from '../components/project/ProjectHeader';
 import { GoalsSection } from '../components/project/GoalsSection';
 import { ProjectStockSection } from '../components/project/ProjectStockSection';
+import { ProjectFilesSection } from '../components/project/ProjectFilesSection';
 import { formatDate, getPriorityColor } from '../utils/dateUtils';
 
 export const Project = () => {
@@ -259,6 +260,8 @@ export const Project = () => {
         )}
 
         <ProjectStockSection projectId={id!} />
+
+        <ProjectFilesSection projectId={id!} />
       </Box>
 
       <NotesModal

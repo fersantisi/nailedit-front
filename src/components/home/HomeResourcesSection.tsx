@@ -1,22 +1,22 @@
 import { Box, CircularProgress, Alert } from '@mui/material';
 import { HomeTitle } from './HomeTitle';
-import { HomeResourceList } from './HomeResourceList';
+import { HomeStockList } from './HomeStockList';
 import { useEffect, useState } from 'react';
-import { Resource } from '../../types';
+import { Stock } from '../../types';
 
 export const HomeResourcesSection = () => {
-  const [resources, setResources] = useState<Resource[]>([]);
+  const [stockItems, setStockItems] = useState<Stock[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    async function fetchResources() {
+    async function fetchStock() {
       try {
         setLoading(true);
         setError(null);
 
         const response = await fetch(
-          import.meta.env.VITE_SERVER_URL + '/resources/list',
+          import.meta.env.VITE_SERVER_URL + '/stock',
           {
             method: 'GET',
             headers: {
@@ -27,11 +27,11 @@ export const HomeResourcesSection = () => {
         );
 
         if (!response.ok) {
-          throw new Error('Failed to fetch resources');
+          throw new Error('Failed to fetch stock data');
         }
 
-        const data: Resource[] = await response.json();
-        setResources(data);
+        const data: Stock[] = await response.json();
+        setStockItems(data);
       } catch (err) {
         setError((err as Error).message);
       } finally {
@@ -39,17 +39,16 @@ export const HomeResourcesSection = () => {
       }
     }
 
-    fetchResources();
+    fetchStock();
   }, []);
 
-  // Filter resources for wishlist (low stock) and nearly out of stock
-  const wishlistResources = resources
-    .filter((resource) => resource.stock < resource.amount * 0.5)
-    .slice(0, 5);
-
-  const lowStockResources = resources
-    .filter((resource) => resource.stock < resource.amount * 0.2)
-    .slice(0, 5);
+  // Filter stock items for out of stock only
+  const outOfStockItems = stockItems
+    .filter((stock) => {
+      const available = stock.quantity - stock.reserved;
+      return available <= 0;
+    })
+    .slice(0, 6); // Show up to 6 items
 
   if (loading) {
     return (
@@ -96,25 +95,12 @@ export const HomeResourcesSection = () => {
         gap: 2,
       }}
     >
-      <HomeTitle title="Resources" fontSize="30px" />
+      <HomeTitle title="Out of Stock Items" fontSize="30px" />
 
-      <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
-        <Box>
-          <HomeTitle title="Wishlist" fontSize="20px" />
-          <HomeResourceList
-            resources={wishlistResources}
-            emptyMessage="No items in wishlist"
-          />
-        </Box>
-
-        <Box>
-          <HomeTitle title="Nearly Out Of Stock" fontSize="20px" />
-          <HomeResourceList
-            resources={lowStockResources}
-            emptyMessage="No low stock items"
-          />
-        </Box>
-      </Box>
+      <HomeStockList
+        stockItems={outOfStockItems}
+        emptyMessage="Great! No items are currently out of stock"
+      />
     </Box>
   );
 };
