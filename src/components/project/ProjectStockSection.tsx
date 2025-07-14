@@ -31,6 +31,7 @@ import {
   Edit as EditIcon,
   Delete as DeleteIcon,
   Inventory as InventoryIcon,
+  PlayArrow as UseIcon,
 } from '@mui/icons-material';
 import { Stock } from '../../types';
 
@@ -66,6 +67,12 @@ export const ProjectStockSection: React.FC<ProjectStockSectionProps> = ({
     useState<ProjectReservedStock | null>(null);
   const [updateQuantity, setUpdateQuantity] = useState<number>(1);
 
+  // Use reserved stock dialog
+  const [useDialogOpen, setUseDialogOpen] = useState(false);
+  const [selectedReservationForUse, setSelectedReservationForUse] =
+    useState<ProjectReservedStock | null>(null);
+  const [useQuantity, setUseQuantity] = useState<number>(1);
+
   const [snackbar, setSnackbar] = useState<{
     open: boolean;
     message: string;
@@ -83,23 +90,54 @@ export const ProjectStockSection: React.FC<ProjectStockSectionProps> = ({
     fetchProjectReservedStock();
   }, []);
 
+  // Refresh data when component becomes visible (e.g., after navigating back from stock page)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        fetchAllStockItems();
+        fetchProjectReservedStock();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
+
   const fetchAllStockItems = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${API_BASE_URL}/stock`, {
+      // Add cache busting to ensure fresh data
+      const response = await fetch(`${API_BASE_URL}/stock?t=${Date.now()}`, {
         method: 'GET',
         credentials: 'include',
+        headers: {
+          'Cache-Control': 'no-cache',
+        },
       });
 
       if (response.ok) {
         const data = await response.json();
+        console.log(
+          'Stock items fetched:',
+          data.map((item: Stock) => ({
+            id: item.id,
+            itemName: item.itemName,
+            quantity: item.quantity,
+            reserved: item.reserved,
+          }))
+        );
         setAllStockItems(data);
+        return data; // Return the new data
       } else {
         showSnackbar('Error fetching stock items', 'error');
+        return null;
       }
     } catch (error) {
       console.error('Error fetching stock items:', error);
       showSnackbar('Error fetching stock items', 'error');
+      return null;
     } finally {
       setLoading(false);
     }
@@ -107,22 +145,30 @@ export const ProjectStockSection: React.FC<ProjectStockSectionProps> = ({
 
   const fetchProjectReservedStock = async () => {
     try {
+      // Add cache busting to ensure fresh data
       const response = await fetch(
-        `${API_BASE_URL}/stock/projects/${projectId}/reserved`,
+        `${API_BASE_URL}/stock/projects/${projectId}/reserved?t=${Date.now()}`,
         {
           method: 'GET',
           credentials: 'include',
+          headers: {
+            'Cache-Control': 'no-cache',
+          },
         }
       );
 
       if (response.ok) {
         const data = await response.json();
+        console.log('Project reservations fetched:', data);
         setProjectReservedStock(data);
+        return data; // Return the new data
       } else {
         console.error('Error fetching project reserved stock');
+        return null;
       }
     } catch (error) {
       console.error('Error fetching project reserved stock:', error);
+      return null;
     }
   };
 
@@ -195,6 +241,107 @@ export const ProjectStockSection: React.FC<ProjectStockSectionProps> = ({
     }
   };
 
+  const handleUseReservedStock = async () => {
+    if (!selectedReservationForUse) return;
+
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/stock/reserved/${selectedReservationForUse.id}/use`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+          body: JSON.stringify({ quantity: useQuantity }),
+        }
+      );
+
+      if (response.ok) {
+        // Wait for data refresh to complete before showing success
+        try {
+          console.log(
+            'Use stock API call successful, waiting before refresh...'
+          );
+          console.log(
+            'Before refresh - Current reservations:',
+            projectReservedStock.map((r) => ({
+              id: r.id,
+              stockId: r.stockId,
+              quantity: r.quantity,
+              itemName: r.stockItem?.itemName,
+            }))
+          );
+          console.log(
+            'Before refresh - Current stock items:',
+            allStockItems.map((item) => ({
+              id: item.id,
+              itemName: item.itemName,
+              quantity: item.quantity,
+              reserved: item.reserved,
+            }))
+          );
+
+          // Add delay to ensure backend has processed the change
+          await new Promise((resolve) => setTimeout(resolve, 500));
+
+          console.log('Starting data refresh...');
+          const newReservations = await fetchProjectReservedStock();
+          console.log('Project reservations refreshed');
+          console.log(
+            'After refresh - New reservations:',
+            newReservations?.map((r: any) => ({
+              id: r.id,
+              stockId: r.stockId,
+              quantity: r.quantity,
+              itemName: r.stockItem?.itemName,
+            })) || []
+          );
+
+          const newStockItems = await fetchAllStockItems();
+          console.log('Stock items refreshed');
+          console.log(
+            'After refresh - New stock items:',
+            newStockItems?.map((item: any) => ({
+              id: item.id,
+              itemName: item.itemName,
+              quantity: item.quantity,
+              reserved: item.reserved,
+            })) || []
+          );
+
+          // Force component re-render with fresh data
+          if (newReservations) setProjectReservedStock([...newReservations]);
+          if (newStockItems) setAllStockItems([...newStockItems]);
+
+          setUseDialogOpen(false);
+          setSelectedReservationForUse(null);
+          setUseQuantity(1);
+          showSnackbar('Reserved stock used successfully', 'success');
+        } catch (error) {
+          console.error('Error refreshing data after using stock:', error);
+          // Still close dialog and show success, but data might be stale
+          setUseDialogOpen(false);
+          setSelectedReservationForUse(null);
+          setUseQuantity(1);
+          showSnackbar(
+            'Stock used successfully, but display may need manual refresh',
+            'success'
+          );
+        }
+      } else {
+        const errorData = await response.json();
+        showSnackbar(
+          errorData.message || 'Error using reserved stock',
+          'error'
+        );
+      }
+    } catch (error) {
+      console.error('Error using reserved stock:', error);
+      showSnackbar('Error using reserved stock', 'error');
+    }
+  };
+
   const handleDeleteReservation = async (reservationId: number) => {
     if (
       window.confirm('Are you sure you want to remove this stock reservation?')
@@ -236,6 +383,12 @@ export const ProjectStockSection: React.FC<ProjectStockSectionProps> = ({
     setSelectedReservation(reservation);
     setUpdateQuantity(reservation.quantity);
     setUpdateDialogOpen(true);
+  };
+
+  const openUseDialog = (reservation: ProjectReservedStock) => {
+    setSelectedReservationForUse(reservation);
+    setUseQuantity(1);
+    setUseDialogOpen(true);
   };
 
   const showSnackbar = (message: string, severity: 'success' | 'error') => {
@@ -294,15 +447,29 @@ export const ProjectStockSection: React.FC<ProjectStockSectionProps> = ({
                 Project Stock Reservations
               </Typography>
             </Box>
-            <Button
-              variant="contained"
-              color="primary"
-              startIcon={<AddIcon />}
-              onClick={openAddDialog}
-              disabled={getAvailableStockItems().length === 0}
-            >
-              Add Reservation
-            </Button>
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <Button
+                variant="contained"
+                color="primary"
+                startIcon={<AddIcon />}
+                onClick={openAddDialog}
+                disabled={getAvailableStockItems().length === 0}
+              >
+                Add Reservation
+              </Button>
+              <Button
+                variant="outlined"
+                onClick={async () => {
+                  console.log('Manual refresh triggered');
+                  await fetchProjectReservedStock();
+                  await fetchAllStockItems();
+                  showSnackbar('Data refreshed', 'success');
+                }}
+                sx={{ color: '#e2e2e2', borderColor: '#79799a' }}
+              >
+                Refresh
+              </Button>
+            </Box>
           </Box>
 
           {projectReservedStock.length === 0 ? (
@@ -358,6 +525,13 @@ export const ProjectStockSection: React.FC<ProjectStockSectionProps> = ({
                             title="Update Quantity"
                           >
                             <EditIcon />
+                          </IconButton>
+                          <IconButton
+                            onClick={() => openUseDialog(reservation)}
+                            sx={{ color: '#4caf50' }}
+                            title="Use Reserved Stock"
+                          >
+                            <UseIcon />
                           </IconButton>
                           <IconButton
                             onClick={() =>
@@ -598,6 +772,89 @@ export const ProjectStockSection: React.FC<ProjectStockSectionProps> = ({
             disabled={updateQuantity <= 0}
           >
             Update Quantity
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Use Reserved Stock Dialog */}
+      <Dialog
+        open={useDialogOpen}
+        onClose={() => setUseDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle sx={{ backgroundColor: '#4c4a52', color: '#e2e2e2' }}>
+          Use Reserved Stock
+        </DialogTitle>
+        <DialogContent sx={{ backgroundColor: '#4c4a52', pt: 2 }}>
+          {selectedReservationForUse && (
+            <>
+              <Typography variant="body1" sx={{ color: '#e2e2e2', mb: 2 }}>
+                <strong>Item:</strong>{' '}
+                {
+                  allStockItems.find(
+                    (s) => s.id === selectedReservationForUse.stockId
+                  )?.itemName
+                }
+              </Typography>
+
+              <Typography variant="body2" sx={{ color: '#b0b0b0', mb: 2 }}>
+                Reserved quantity: {selectedReservationForUse.quantity}{' '}
+                {
+                  allStockItems.find(
+                    (s) => s.id === selectedReservationForUse.stockId
+                  )?.unit
+                }
+              </Typography>
+
+              <Typography variant="body2" sx={{ color: '#ff9800', mb: 3 }}>
+                <strong>Note:</strong> Using reserved stock will consume it from
+                both your reservation and the total stock quantity.
+              </Typography>
+
+              <TextField
+                autoFocus
+                margin="dense"
+                label="Quantity to Use"
+                type="number"
+                fullWidth
+                variant="outlined"
+                value={useQuantity}
+                onChange={(e) => {
+                  const value = parseInt(e.target.value) || 1;
+                  setUseQuantity(
+                    Math.min(
+                      Math.max(1, value),
+                      selectedReservationForUse.quantity
+                    )
+                  );
+                }}
+                inputProps={{
+                  min: 1,
+                  max: selectedReservationForUse.quantity,
+                }}
+                helperText={`Maximum available: ${selectedReservationForUse.quantity} ${allStockItems.find((s) => s.id === selectedReservationForUse.stockId)?.unit || ''}`}
+              />
+            </>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ backgroundColor: '#4c4a52', p: 2 }}>
+          <Button
+            onClick={() => setUseDialogOpen(false)}
+            sx={{ color: '#e2e2e2' }}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleUseReservedStock}
+            variant="contained"
+            color="primary"
+            disabled={
+              useQuantity <= 0 ||
+              useQuantity > (selectedReservationForUse?.quantity || 0)
+            }
+          >
+            Use Stock
           </Button>
         </DialogActions>
       </Dialog>

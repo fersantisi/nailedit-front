@@ -147,7 +147,32 @@ export const StockPage = () => {
           'success'
         );
       } else {
-        showSnackbar('Error saving stock item', 'error');
+        // Handle specific validation errors from backend
+        if (response.status === 400) {
+          try {
+            const errorData = await response.json();
+            if (
+              errorData.message &&
+              errorData.message.includes(
+                'Cannot reduce quantity below currently reserved'
+              )
+            ) {
+              showSnackbar(
+                'Cannot reduce stock below reserved amount. Please unreserve items first or increase the quantity.',
+                'error'
+              );
+            } else {
+              showSnackbar(
+                errorData.message || 'Error saving stock item',
+                'error'
+              );
+            }
+          } catch {
+            showSnackbar('Error saving stock item', 'error');
+          }
+        } else {
+          showSnackbar('Error saving stock item', 'error');
+        }
       }
     } catch (error) {
       console.error('Error saving stock item:', error);
