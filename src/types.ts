@@ -66,9 +66,15 @@ export type ParticipationRequest = {
   id: number;
   projectId: number;
   userId: number;
+  status: 'pending' | 'accepted' | 'rejected';
+  created_at: string;
+  updated_at: string;
+  // Legacy fields for backward compatibility
   createdAt?: string;
   user?: User;
-  project?: Project;
+  project?: Project & {
+    user?: User; // Project owner information
+  };
 };
 
 export type Participant = {

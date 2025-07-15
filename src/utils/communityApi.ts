@@ -255,6 +255,36 @@ export const communityApi = {
     return response.json();
   },
 
+  // Get current user's own pending participation requests
+  async getUserPendingRequests(): Promise<ParticipationRequest[]> {
+    const response = await fetch(
+      `${API_BASE_URL}/users/me/participation-requests`,
+      {
+        method: 'GET',
+        ...defaultFetchOptions,
+      }
+    );
+
+    if (!response.ok) {
+      // If endpoint doesn't exist, return empty array
+      if (response.status === 404) {
+        console.warn('User pending requests endpoint not available');
+        return [];
+      }
+      throw new Error('Failed to fetch user pending requests');
+    }
+
+    const data = await response.json();
+
+    // Normalize the response to handle both snake_case and camelCase date fields
+    return data.map((request: any) => ({
+      ...request,
+      // Add camelCase version for backward compatibility
+      createdAt: request.created_at || request.createdAt,
+      updatedAt: request.updated_at || request.updatedAt,
+    }));
+  },
+
   // Check project permissions for current user
   async checkProjectPermissions(
     projectId: number
@@ -393,7 +423,7 @@ export const communityUtils = {
     userId: number,
     requests: ParticipationRequest[] = []
   ): boolean {
-    return requests.some((r) => r.userId === userId);
+    return requests.some((r) => r.userId === userId && r.status === 'pending');
   },
 
   // Check if user is the owner of a project
@@ -442,38 +472,41 @@ export const communityUtils = {
   // Check if current user has a pending request for a project
   async checkPendingRequest(projectId: number): Promise<boolean> {
     try {
-      // First, let's try to get the current user's ID from a /users/me call
-      const meResponse = await fetch(`${API_BASE_URL}/users/me`, {
-        method: 'GET',
-        credentials: 'include',
-      });
+      // Use the new endpoint to get user's own pending requests
+      const userPendingRequests = await communityApi.getUserPendingRequests();
 
-      if (!meResponse.ok) {
-        return false;
-      }
+      // Check if user has a pending request for this specific project
+      return userPendingRequests.some(
+        (request) =>
+          request.projectId === projectId && request.status === 'pending'
+      );
+    } catch (error) {
+      console.error('Failed to check pending requests:', error);
 
-      const meData = await meResponse.json();
-      const currentUserId = meData.userId;
-
-      // Method 1: Try to get participation requests for the project
-      // This works if current user is the project owner
+      // Fallback: Try the old method if new endpoint fails
       try {
+        const meResponse = await fetch(`${API_BASE_URL}/users/me`, {
+          method: 'GET',
+          credentials: 'include',
+        });
+
+        if (!meResponse.ok) {
+          return false;
+        }
+
+        const meData = await meResponse.json();
+        const currentUserId = meData.userId;
+
+        // Try to get participation requests for the project (only works if user is owner)
         const requests =
           await participantApi.getParticipationRequests(projectId);
-        // Check if current user has a pending request
         return requests.some((request) => request.userId === currentUserId);
-      } catch (error) {
-        // If we can't get requests (not owner), we can't reliably check for pending requests
-        // The backend would need to provide an endpoint like GET /users/me/participation-requests
-        // or include pending request status in the permissions endpoint
+      } catch (fallbackError) {
         console.warn(
-          'Cannot check pending requests for non-owner user. Consider enhancing the permissions endpoint.'
+          'Cannot check pending requests - backend endpoint may not be available'
         );
         return false;
       }
-    } catch (error) {
-      console.error('Failed to check pending requests:', error);
-      return false;
     }
   },
 

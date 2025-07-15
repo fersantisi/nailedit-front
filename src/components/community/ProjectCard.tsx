@@ -101,40 +101,24 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
         const status = await communityUtils.getProjectStatus(projectId);
         setPermissions(status.permissions);
 
-        // Check for stored pending state first
-        const storedPending = localStorage.getItem(
-          `pending-request-${projectId}`
-        );
+        // Use backend status directly - no localStorage dependency
+        setRequestStatus(status.uiStatus);
 
-        // If we have a stored pending state and no access, show pending
-        if (storedPending && !status.permissions.hasAccess) {
-          setRequestStatus('pending');
-        } else {
-          setRequestStatus(status.uiStatus);
-
-          // Clear stored pending state if user now has access (request was accepted)
-          if (status.permissions.hasAccess && storedPending) {
-            localStorage.removeItem(`pending-request-${projectId}`);
-          }
-        }
+        console.log(`Project ${projectId} status:`, {
+          uiStatus: status.uiStatus,
+          hasAccess: status.permissions.hasAccess,
+          role: status.permissions.role,
+          hasPendingRequest: status.hasPendingRequest,
+        });
       } catch (error) {
         console.error('Failed to load permissions:', error);
 
-        // Check for stored pending state in fallback too
-        const storedPending = localStorage.getItem(
-          `pending-request-${projectId}`
+        // Fallback to basic ownership check if permissions fail
+        const fallbackStatus = communityUtils.getCommunityUserStatus(
+          currentUser.id,
+          project
         );
-
-        if (storedPending) {
-          setRequestStatus('pending');
-        } else {
-          // Fallback to basic ownership check if permissions fail
-          const fallbackStatus = communityUtils.getCommunityUserStatus(
-            currentUser.id,
-            project
-          );
-          setRequestStatus(fallbackStatus === 'owner' ? 'owner' : 'none');
-        }
+        setRequestStatus(fallbackStatus === 'owner' ? 'owner' : 'none');
       } finally {
         setPermissionsLoading(false);
       }
@@ -166,8 +150,16 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
       setRequestStatus('pending');
       setSuccess('Participation request sent successfully!');
 
-      // Store the pending state in localStorage so it persists across page refreshes
-      localStorage.setItem(`pending-request-${projectId}`, 'true');
+      // Refresh permissions to get updated status from backend
+      setTimeout(async () => {
+        try {
+          const status = await communityUtils.getProjectStatus(projectId);
+          setRequestStatus(status.uiStatus);
+          setPermissions(status.permissions);
+        } catch (error) {
+          console.warn('Failed to refresh status after request:', error);
+        }
+      }, 1000);
 
       onRequestSent?.();
     } catch (err) {
@@ -182,15 +174,6 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
       ) {
         setRequestStatus('pending');
         setSuccess('You have already requested to join this project.');
-
-        // Store the pending state
-        const projectId =
-          project.id ||
-          (project as any).projectId ||
-          (project as any).project_id;
-        if (projectId) {
-          localStorage.setItem(`pending-request-${projectId}`, 'true');
-        }
       } else {
         setError(errorMessage);
       }
