@@ -33,10 +33,11 @@ import {
   Inventory as InventoryIcon,
   PlayArrow as UseIcon,
 } from '@mui/icons-material';
-import { Stock } from '../../types';
+import { Stock, ProjectPermissions } from '../../types';
 
 interface ProjectStockSectionProps {
   projectId: string;
+  permissions: ProjectPermissions;
 }
 
 interface ProjectReservedStock {
@@ -49,6 +50,7 @@ interface ProjectReservedStock {
 
 export const ProjectStockSection: React.FC<ProjectStockSectionProps> = ({
   projectId,
+  permissions,
 }) => {
   const [allStockItems, setAllStockItems] = useState<Stock[]>([]);
   const [projectReservedStock, setProjectReservedStock] = useState<
@@ -84,6 +86,9 @@ export const ProjectStockSection: React.FC<ProjectStockSectionProps> = ({
   });
 
   const API_BASE_URL = import.meta.env.VITE_SERVER_URL;
+
+  // Check if current user is the project owner
+  const isOwner = permissions.role === 'owner';
 
   useEffect(() => {
     fetchAllStockItems();
@@ -160,6 +165,7 @@ export const ProjectStockSection: React.FC<ProjectStockSectionProps> = ({
       if (response.ok) {
         const data = await response.json();
         console.log('Project reservations fetched:', data);
+
         setProjectReservedStock(data);
         return data; // Return the new data
       } else {
@@ -461,20 +467,30 @@ export const ProjectStockSection: React.FC<ProjectStockSectionProps> = ({
           >
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
               <InventoryIcon sx={{ color: '#79799a' }} />
-              <Typography variant="h6" sx={{ color: '#e2e2e2' }}>
-                Project Stock Reservations
-              </Typography>
+              <Box>
+                <Typography variant="h6" sx={{ color: '#e2e2e2' }}>
+                  Project Stock Reservations
+                </Typography>
+                {!isOwner && (
+                  <Typography variant="body2" sx={{ color: '#b0b0b0' }}>
+                    You can use reserved stock. Only the project owner can
+                    add/edit reservations.
+                  </Typography>
+                )}
+              </Box>
             </Box>
             <Box sx={{ display: 'flex', gap: 1 }}>
-              <Button
-                variant="contained"
-                color="primary"
-                startIcon={<AddIcon />}
-                onClick={openAddDialog}
-                disabled={getAvailableStockItems().length === 0}
-              >
-                Add Reservation
-              </Button>
+              {isOwner && (
+                <Button
+                  variant="contained"
+                  color="primary"
+                  startIcon={<AddIcon />}
+                  onClick={openAddDialog}
+                  disabled={getAvailableStockItems().length === 0}
+                >
+                  Add Reservation
+                </Button>
+              )}
               <Button
                 variant="outlined"
                 onClick={async () => {
@@ -495,7 +511,9 @@ export const ProjectStockSection: React.FC<ProjectStockSectionProps> = ({
               variant="body1"
               sx={{ color: '#b0b0b0', textAlign: 'center', py: 3 }}
             >
-              No stock reserved for this project yet.
+              {isOwner
+                ? 'No stock reserved for this project yet. Click "Add Reservation" to reserve stock.'
+                : 'No stock has been reserved for this project by the owner yet.'}
             </Typography>
           ) : (
             <TableContainer
@@ -525,9 +543,8 @@ export const ProjectStockSection: React.FC<ProjectStockSectionProps> = ({
                 </TableHead>
                 <TableBody>
                   {projectReservedStock.map((reservation) => {
-                    const stockItem = allStockItems.find(
-                      (s) => s.id === reservation.stockId
-                    );
+                    // Use stockItem from the reservation data (populated by backend)
+                    const stockItem = reservation.stockItem;
 
                     return (
                       <TableRow key={reservation.id}>
@@ -541,13 +558,15 @@ export const ProjectStockSection: React.FC<ProjectStockSectionProps> = ({
                           {stockItem?.unit || 'N/A'}
                         </TableCell>
                         <TableCell>
-                          <IconButton
-                            onClick={() => openUpdateDialog(reservation)}
-                            sx={{ color: '#79799a' }}
-                            title="Update Quantity"
-                          >
-                            <EditIcon />
-                          </IconButton>
+                          {isOwner && (
+                            <IconButton
+                              onClick={() => openUpdateDialog(reservation)}
+                              sx={{ color: '#79799a' }}
+                              title="Update Quantity"
+                            >
+                              <EditIcon />
+                            </IconButton>
+                          )}
                           <IconButton
                             onClick={() => openUseDialog(reservation)}
                             sx={{ color: '#4caf50' }}
@@ -555,15 +574,17 @@ export const ProjectStockSection: React.FC<ProjectStockSectionProps> = ({
                           >
                             <UseIcon />
                           </IconButton>
-                          <IconButton
-                            onClick={() =>
-                              handleDeleteReservation(reservation.id)
-                            }
-                            sx={{ color: '#f44336' }}
-                            title="Remove Reservation"
-                          >
-                            <DeleteIcon />
-                          </IconButton>
+                          {isOwner && (
+                            <IconButton
+                              onClick={() =>
+                                handleDeleteReservation(reservation.id)
+                              }
+                              sx={{ color: '#f44336' }}
+                              title="Remove Reservation"
+                            >
+                              <DeleteIcon />
+                            </IconButton>
+                          )}
                         </TableCell>
                       </TableRow>
                     );
@@ -747,20 +768,12 @@ export const ProjectStockSection: React.FC<ProjectStockSectionProps> = ({
             <>
               <Typography variant="body1" sx={{ color: '#e2e2e2', mb: 2 }}>
                 <strong>Item:</strong>{' '}
-                {
-                  allStockItems.find(
-                    (s) => s.id === selectedReservation.stockId
-                  )?.itemName
-                }
+                {selectedReservation.stockItem?.itemName || 'Unknown Item'}
               </Typography>
 
               <Typography variant="body2" sx={{ color: '#b0b0b0', mb: 2 }}>
                 Current reservation: {selectedReservation.quantity}{' '}
-                {
-                  allStockItems.find(
-                    (s) => s.id === selectedReservation.stockId
-                  )?.unit
-                }
+                {selectedReservation.stockItem?.unit || 'units'}
               </Typography>
 
               <TextField
@@ -780,7 +793,7 @@ export const ProjectStockSection: React.FC<ProjectStockSectionProps> = ({
                   min: 1,
                   max: getMaxQuantityForUpdate(selectedReservation),
                 }}
-                helperText={`Maximum available: ${getMaxQuantityForUpdate(selectedReservation)} ${allStockItems.find((s) => s.id === selectedReservation.stockId)?.unit || ''}`}
+                helperText={`Maximum available: ${getMaxQuantityForUpdate(selectedReservation)} ${selectedReservation.stockItem?.unit || ''}`}
               />
             </>
           )}
@@ -818,20 +831,13 @@ export const ProjectStockSection: React.FC<ProjectStockSectionProps> = ({
             <>
               <Typography variant="body1" sx={{ color: '#e2e2e2', mb: 2 }}>
                 <strong>Item:</strong>{' '}
-                {
-                  allStockItems.find(
-                    (s) => s.id === selectedReservationForUse.stockId
-                  )?.itemName
-                }
+                {selectedReservationForUse.stockItem?.itemName ||
+                  'Unknown Item'}
               </Typography>
 
               <Typography variant="body2" sx={{ color: '#b0b0b0', mb: 2 }}>
                 Reserved quantity: {selectedReservationForUse.quantity}{' '}
-                {
-                  allStockItems.find(
-                    (s) => s.id === selectedReservationForUse.stockId
-                  )?.unit
-                }
+                {selectedReservationForUse.stockItem?.unit || 'units'}
               </Typography>
 
               <Typography variant="body2" sx={{ color: '#ff9800', mb: 3 }}>
@@ -860,7 +866,7 @@ export const ProjectStockSection: React.FC<ProjectStockSectionProps> = ({
                   min: 1,
                   max: selectedReservationForUse.quantity,
                 }}
-                helperText={`Maximum available: ${selectedReservationForUse.quantity} ${allStockItems.find((s) => s.id === selectedReservationForUse.stockId)?.unit || ''}`}
+                helperText={`Maximum available: ${selectedReservationForUse.quantity} ${selectedReservationForUse.stockItem?.unit || ''}`}
               />
             </>
           )}

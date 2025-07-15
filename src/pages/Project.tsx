@@ -1,13 +1,28 @@
-import { Box, Container, CircularProgress, Alert, Button } from '@mui/material';
+import {
+  Box,
+  Alert,
+  Container,
+  CircularProgress,
+  Button,
+  Typography,
+} from '@mui/material';
 import { Navbar } from '../components/ui/navbar';
 import { useEffect, useState } from 'react';
-import { Goal, User } from '../types';
+import {
+  Goal,
+  User,
+  Project as ProjectType,
+  ProjectPermissions,
+} from '../types';
 import { useParams, useNavigate } from 'react-router-dom';
 import NotesModal from '../components/project/NotesModal';
 import { ProjectHeader } from '../components/project/ProjectHeader';
 import { GoalsSection } from '../components/project/GoalsSection';
 import { ProjectStockSection } from '../components/project/ProjectStockSection';
 import { ProjectFilesSection } from '../components/project/ProjectFilesSection';
+import { TeamMembersSection } from '../components/community/TeamMembersSection';
+import { PendingRequestsSection } from '../components/community/PendingRequestsSection';
+import { communityUtils } from '../utils/communityApi';
 import { formatDate, getPriorityColor } from '../utils/dateUtils';
 
 export const Project = () => {
@@ -17,12 +32,11 @@ export const Project = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [projectData, setProjectData] = useState<{
-    name: string;
-    description: string;
-    category: string;
-    dueDate: string;
-  } | null>(null);
+  const [projectData, setProjectData] = useState<ProjectType | null>(null);
+  const [permissions, setPermissions] = useState<ProjectPermissions | null>(
+    null
+  );
+  const [permissionsLoading, setPermissionsLoading] = useState(true);
 
   // Notes modal state
   const [notesModal, setNotesModal] = useState<{
@@ -120,6 +134,30 @@ export const Project = () => {
           return;
         }
 
+        // Check project permissions
+        try {
+          const projectPermissions = await communityUtils.getProjectPermissions(
+            parseInt(id)
+          );
+          setPermissions(projectPermissions);
+
+          // If user doesn't have access, show error
+          if (!projectPermissions.hasAccess) {
+            setError("You don't have access to this project");
+            setLoading(false);
+            setPermissionsLoading(false);
+            return;
+          }
+        } catch (error) {
+          console.error('Failed to check permissions:', error);
+          setError('Failed to verify project access');
+          setLoading(false);
+          setPermissionsLoading(false);
+          return;
+        } finally {
+          setPermissionsLoading(false);
+        }
+
         // Fetch project data
         const projectResponse = await fetch(
           import.meta.env.VITE_SERVER_URL + '/project/' + id,
@@ -132,12 +170,7 @@ export const Project = () => {
         if (projectResponse.ok) {
           const projectInfo = await projectResponse.json();
           console.log('Project data:', projectInfo);
-          setProjectData({
-            name: projectInfo.name,
-            description: projectInfo.description,
-            category: projectInfo.category,
-            dueDate: projectInfo.dueDate,
-          });
+          setProjectData(projectInfo);
         }
 
         // Fetch goals and tasks
@@ -242,12 +275,15 @@ export const Project = () => {
           overflowX: 'hidden',
         }}
       >
-        <ProjectHeader
-          projectId={id!}
-          projectData={projectData}
-          formatDate={formatDate}
-          onOpenProjectNotes={openProjectNotesModal}
-        />
+        {projectData && permissions && (
+          <ProjectHeader
+            projectId={id!}
+            projectData={projectData}
+            permissions={permissions}
+            formatDate={formatDate}
+            onOpenProjectNotes={openProjectNotesModal}
+          />
+        )}
 
         {goals && (
           <GoalsSection
@@ -259,9 +295,53 @@ export const Project = () => {
           />
         )}
 
-        <ProjectStockSection projectId={id!} />
+        {projectData && permissions && (
+          <ProjectStockSection projectId={id!} permissions={permissions} />
+        )}
 
         <ProjectFilesSection projectId={id!} />
+
+        {/* Participant Management - Show based on permissions */}
+        {projectData && user && permissions && (
+          <Box
+            sx={{
+              display: 'flex',
+              gap: 2,
+              flexWrap: 'wrap',
+              maxWidth: '1200px',
+              mx: 'auto',
+              width: '100%',
+            }}
+          >
+            {/* Team Members - Show to all project members */}
+            <Box sx={{ flex: 1, minWidth: '300px', maxWidth: '600px' }}>
+              <TeamMembersSection
+                project={projectData}
+                currentUser={user}
+                permissions={permissions}
+                onParticipantRemoved={() => {
+                  // Refresh project data to update participant count
+                  window.location.reload();
+                }}
+              />
+            </Box>
+
+            {/* Pending Requests - Only show to owners */}
+            {permissions.role === 'owner' && (
+              <Box sx={{ flex: 1, minWidth: '300px', maxWidth: '600px' }}>
+                <PendingRequestsSection
+                  project={projectData}
+                  currentUser={user}
+                  permissions={permissions}
+                  onRequestProcessed={() => {
+                    // Refresh project data to update participant count
+                    window.location.reload();
+                  }}
+                />
+              </Box>
+            )}
+          </Box>
+        )}
       </Box>
 
       <NotesModal

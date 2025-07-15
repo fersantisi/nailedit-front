@@ -13,6 +13,7 @@ import {
   PersonAdd as RegisterIcon,
   AdminPanelSettings as AdminIcon,
   Inventory as InventoryIcon,
+  Group as CommunityIcon,
 } from '@mui/icons-material';
 
 interface NavbarProps {
@@ -67,6 +68,14 @@ export const Navbar = ({ user, isAdmin = false }: NavbarProps) => {
                   <ProjectIcon sx={{ color: 'white' }} />
                   <Typography variant="h6" component="div">
                     Projects
+                  </Typography>
+                </Box>
+              </NavbarItem>
+              <NavbarItem to="/community">
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <CommunityIcon sx={{ color: 'white' }} />
+                  <Typography variant="h6" component="div">
+                    Community
                   </Typography>
                 </Box>
               </NavbarItem>

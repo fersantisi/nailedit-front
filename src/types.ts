@@ -7,6 +7,22 @@ export type User = {
   isActive?: boolean;
 };
 
+export type Project = {
+  id: number;
+  name: string;
+  description?: string;
+  category?: string;
+  image?: string;
+  dueDate?: string;
+  userId: number; // owner
+  createdAt?: string;
+  updatedAt?: string;
+  goals?: Goal[];
+  participants?: Participant[];
+  participationRequests?: ParticipationRequest[];
+  owner?: User;
+};
+
 export type Goal = {
   id: number;
   name: string;
@@ -45,3 +61,45 @@ export type Stock = {
   reserved: number;
   userid: number;
 };
+
+export type ParticipationRequest = {
+  id: number;
+  projectId: number;
+  userId: number;
+  createdAt?: string;
+  user?: User;
+  project?: Project;
+};
+
+export type Participant = {
+  id: number;
+  projectId: number;
+  userId: number;
+  joinedAt?: string;
+  user?: User;
+  project?: Project;
+};
+
+export type CommunitySearchResponse = {
+  projects: Project[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+};
+
+export type RequestStatus =
+  | 'none'
+  | 'pending'
+  | 'accepted'
+  | 'rejected'
+  | 'member';
+
+export type ProjectPermissions = {
+  projectId: number;
+  userId: number;
+  hasAccess: boolean;
+  role: 'owner' | 'participant' | 'none';
+};
+
+export type UserRole = 'owner' | 'participant' | 'none';

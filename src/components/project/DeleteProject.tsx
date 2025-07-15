@@ -11,12 +11,14 @@ import {
   Snackbar,
 } from '@mui/material';
 import { Delete as DeleteIcon } from '@mui/icons-material';
+import { ProjectPermissions } from '../../types';
 
 interface DeleteProjectProps {
   projectId: string | undefined;
+  permissions: ProjectPermissions;
 }
 
-const DeleteProject: React.FC<DeleteProjectProps> = ({ projectId }) => {
+const DeleteProject: React.FC<DeleteProjectProps> = ({ projectId, permissions }) => {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -30,7 +32,19 @@ const DeleteProject: React.FC<DeleteProjectProps> = ({ projectId }) => {
     severity: 'info',
   });
 
+  // Only show delete button if user is the project owner
+  const isOwner = permissions.role === 'owner';
+
   const handleClickOpen = () => {
+    // Additional safety check
+    if (!isOwner) {
+      setAlert({
+        open: true,
+        message: 'Only project owners can delete projects',
+        severity: 'error',
+      });
+      return;
+    }
     setOpen(true);
   };
 
@@ -40,6 +54,16 @@ const DeleteProject: React.FC<DeleteProjectProps> = ({ projectId }) => {
 
   const handleDelete = async () => {
     if (!projectId) return;
+
+    // Final permission check before API call
+    if (!isOwner) {
+      setAlert({
+        open: true,
+        message: 'Only project owners can delete projects',
+        severity: 'error',
+      });
+      return;
+    }
 
     setLoading(true);
     try {
@@ -86,6 +110,11 @@ const DeleteProject: React.FC<DeleteProjectProps> = ({ projectId }) => {
   const handleCloseAlert = () => {
     setAlert((prev) => ({ ...prev, open: false }));
   };
+
+  // Don't render the button if user is not the owner
+  if (!isOwner) {
+    return null;
+  }
 
   return (
     <>
