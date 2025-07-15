@@ -7,7 +7,6 @@ import {
   Container,
   Chip,
   Paper,
-  Grid,
 } from '@mui/material';
 import { Timeline as TimelineIcon } from '@mui/icons-material';
 import { Navbar } from '../components/ui/navbar';
@@ -25,6 +24,13 @@ interface CalendarItem {
   goalName?: string;
   projectId?: number;
   goalId?: number;
+}
+
+interface Project {
+  id: number;
+  name: string;
+  dueDate?: string;
+  userRole?: 'owner' | 'participant';
 }
 
 export const Gantt = () => {
@@ -77,53 +83,73 @@ export const Gantt = () => {
           return;
         }
 
-        // Fetch all data in parallel
-        const [projectsResponse, goalsResponse, tasksResponse] =
-          await Promise.all([
-            fetch(import.meta.env.VITE_SERVER_URL + '/project/list', {
-              method: 'GET',
-              credentials: 'include',
-            }),
-            fetch(import.meta.env.VITE_SERVER_URL + '/project/goals/list', {
-              method: 'GET',
-              credentials: 'include',
-            }),
-            fetch(import.meta.env.VITE_SERVER_URL + '/project/tasks/list', {
-              method: 'GET',
-              credentials: 'include',
-            }),
-          ]);
+        // Step 1: Fetch all accessible projects (owned + participated)
+        const ownedProjectsResponse = await fetch(
+          import.meta.env.VITE_SERVER_URL + '/project/list',
+          {
+            method: 'GET',
+            credentials: 'include',
+          }
+        );
 
-        if (!projectsResponse.ok || !goalsResponse.ok || !tasksResponse.ok) {
-          throw new Error('Failed to fetch calendar data');
+        let allProjects: Project[] = [];
+
+        // Add owned projects
+        if (ownedProjectsResponse.ok) {
+          const ownedProjects = await ownedProjectsResponse.json();
+          console.log('Owned projects:', ownedProjects);
+          allProjects = ownedProjects.map((project: any) => ({
+            id: project.id,
+            name: project.name,
+            dueDate: project.dueDate,
+            userRole: 'owner' as const,
+          }));
         }
 
-        const projects: any[] = await projectsResponse.json();
-        const goals: Goal[] = await goalsResponse.json();
-        const tasks: Task[] = await tasksResponse.json();
+        // Add participated projects (with error handling)
+        try {
+          const participatedProjectsResponse = await fetch(
+            import.meta.env.VITE_SERVER_URL + '/users/me/participated-projects',
+            {
+              method: 'GET',
+              credentials: 'include',
+            }
+          );
 
-        console.log('Projects:', projects);
-        console.log('Goals:', goals);
-        console.log('Tasks:', tasks);
+          if (participatedProjectsResponse.ok) {
+            const participatedProjects =
+              await participatedProjectsResponse.json();
+            console.log('Participated projects:', participatedProjects);
+            const participatedProjectsWithRole = participatedProjects.map(
+              (project: any) => ({
+                id: project.id,
+                name: project.name,
+                dueDate: project.dueDate,
+                userRole: 'participant' as const,
+              })
+            );
 
-        // Create a map of project names for quick lookup
-        const projectMap = new Map();
-        projects.forEach((project) => {
-          projectMap.set(project.id, project.name);
-        });
+            // Merge projects, avoiding duplicates
+            participatedProjectsWithRole.forEach((project: Project) => {
+              if (!allProjects.find((p) => p.id === project.id)) {
+                allProjects.push(project);
+              }
+            });
+          }
+        } catch (error) {
+          console.error('Failed to fetch participated projects:', error);
+          // Continue with only owned projects
+        }
 
-        // Create a map of goal names for quick lookup
-        const goalMap = new Map();
-        goals.forEach((goal) => {
-          goalMap.set(goal.id, goal.name);
-        });
+        console.log('All accessible projects for Gantt:', allProjects);
 
-        const allItems: CalendarItem[] = [];
+        // Step 2: Fetch goals and tasks from all accessible projects
+        const allCalendarItemsPromises = allProjects.map(async (project) => {
+          const projectItems: CalendarItem[] = [];
 
-        // Process projects with due dates
-        projects.forEach((project) => {
+          // Add project to calendar if it has a due date
           if (project.dueDate) {
-            allItems.push({
+            projectItems.push({
               id: `project-${project.id}`,
               title: project.name,
               dueDate: project.dueDate,
@@ -132,45 +158,91 @@ export const Gantt = () => {
               projectId: project.id,
             });
           }
-        });
 
-        // Process goals with due dates
-        goals.forEach((goal) => {
-          if (goal.dueDate) {
-            const projectName = projectMap.get(goal.projectId);
-            allItems.push({
-              id: `goal-${goal.id}`,
-              title: goal.name,
-              dueDate: goal.dueDate,
-              type: 'goal',
-              projectName: projectName,
-              goalName: goal.name,
-              projectId: goal.projectId,
-              goalId: goal.id,
-            });
+          try {
+            // Fetch goals for this project
+            const goalsResponse = await fetch(
+              `${import.meta.env.VITE_SERVER_URL}/project/${project.id}/goals`,
+              {
+                method: 'GET',
+                credentials: 'include',
+              }
+            );
+
+            if (goalsResponse.ok) {
+              const goals: Goal[] = await goalsResponse.json();
+              console.log(`Goals for project ${project.id}:`, goals);
+
+              // Process each goal
+              for (const goal of goals) {
+                // Add goal to calendar if it has a due date
+                if (goal.dueDate) {
+                  projectItems.push({
+                    id: `goal-${goal.id}`,
+                    title: goal.name,
+                    dueDate: goal.dueDate,
+                    type: 'goal',
+                    projectName: project.name,
+                    goalName: goal.name,
+                    projectId: project.id,
+                    goalId: goal.id,
+                  });
+                }
+
+                // Fetch tasks for this goal
+                try {
+                  const tasksResponse = await fetch(
+                    `${import.meta.env.VITE_SERVER_URL}/project/${project.id}/goal/${goal.id}/tasks`,
+                    {
+                      method: 'GET',
+                      credentials: 'include',
+                    }
+                  );
+
+                  if (tasksResponse.ok) {
+                    const tasks: Task[] = await tasksResponse.json();
+                    console.log(`Tasks for goal ${goal.id}:`, tasks);
+
+                    // Add tasks with due dates to calendar
+                    tasks.forEach((task) => {
+                      if (task.dueDate) {
+                        projectItems.push({
+                          id: `task-${task.id}`,
+                          title: task.name,
+                          dueDate: task.dueDate,
+                          type: 'task',
+                          priority: task.label,
+                          projectName: project.name,
+                          goalName: goal.name,
+                          projectId: project.id,
+                          goalId: goal.id,
+                        });
+                      }
+                    });
+                  }
+                } catch (error) {
+                  console.error(
+                    `Error fetching tasks for goal ${goal.id}:`,
+                    error
+                  );
+                }
+              }
+            }
+          } catch (error) {
+            console.error(
+              `Error fetching goals for project ${project.id}:`,
+              error
+            );
           }
+
+          return projectItems;
         });
 
-        // Process tasks with due dates
-        tasks.forEach((task) => {
-          if (task.dueDate) {
-            const projectName = projectMap.get(task.projectId);
-            const goalName = goalMap.get(task.goalId);
-            allItems.push({
-              id: `task-${task.id}`,
-              title: task.name,
-              dueDate: task.dueDate,
-              type: 'task',
-              priority: task.label,
-              projectName: projectName,
-              goalName: goalName,
-              projectId: task.projectId,
-              goalId: task.goalId,
-            });
-          }
-        });
+        // Step 3: Combine all calendar items from all projects
+        const allItemsArrays = await Promise.all(allCalendarItemsPromises);
+        const allItems = allItemsArrays.flat();
 
-        console.log('All calendar items:', allItems);
+        console.log('All Gantt items from accessible projects:', allItems);
 
         // Sort items by due date
         allItems.sort(
@@ -321,45 +393,38 @@ export const Gantt = () => {
   const { startDate, endDate } = getTimelineDimensions();
 
   return (
-    <>
+    <Box sx={{ minHeight: '100vh', backgroundColor: '#2e2e2e' }}>
       <Navbar user={user} />
       <Container
-        maxWidth={false}
+        maxWidth="lg"
         sx={{
-          pt: 3,
-          pb: '80px',
-          px: { xs: 2, sm: 3, md: 4 },
-          minHeight: 'calc(100vh - 70px)',
+          py: 4,
           overflow: 'hidden',
           overflowX: 'hidden',
+          minHeight: 'calc(100vh - 70px)',
         }}
       >
-        <Box sx={{ mb: 4 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-            <Box
-              sx={{
-                backgroundColor: 'primary.main',
-                borderRadius: '50%',
-                p: 1.5,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <TimelineIcon sx={{ color: 'white', fontSize: '1.5rem' }} />
-            </Box>
-            <Box>
-              <Typography
-                variant="h4"
-                component="h1"
-                sx={{ fontWeight: 'bold' }}
-              >
-                Gantt Chart
-              </Typography>
-              <Typography variant="body1" color="text.secondary">
-                Timeline view of all project deadlines
-              </Typography>
-            </Box>
+        {/* Header */}
+        <Box
+          sx={{
+            mb: 4,
+            p: 3,
+            backgroundColor: 'background.paper',
+            borderRadius: 2,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 2,
+            flexShrink: 0,
+          }}
+        >
+          <TimelineIcon sx={{ fontSize: 40, color: 'primary.main' }} />
+          <Box>
+            <Typography variant="h4" component="h1" gutterBottom>
+              Gantt Chart
+            </Typography>
+            <Typography variant="body1" color="text.secondary">
+              Timeline view of all your project deadlines
+            </Typography>
           </Box>
         </Box>
 
@@ -415,54 +480,54 @@ export const Gantt = () => {
             {/* Timeline Header */}
             <Box
               sx={{
+                position: 'relative',
+                height: '40px',
+                backgroundColor: 'grey.900',
+                borderRadius: '8px',
                 mb: 3,
-                p: 2,
-                backgroundColor: 'background.paper',
-                borderRadius: 1,
+                overflow: 'hidden',
               }}
             >
-              <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold' }}>
-                Timeline: {startDate.toLocaleDateString()} -{' '}
-                {endDate.toLocaleDateString()}
-              </Typography>
-              <Box
+              <Typography
+                variant="body2"
                 sx={{
-                  height: '20px',
-                  backgroundColor: 'grey.700',
-                  borderRadius: '10px',
-                  position: 'relative',
-                  mb: 1,
+                  position: 'absolute',
+                  left: '10px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  color: 'white',
+                  fontWeight: 'bold',
                 }}
               >
-                {/* Today marker */}
-                <Box
-                  sx={{
-                    position: 'absolute',
-                    top: '-5px',
-                    left: `${getTimelinePosition(new Date().toISOString())}%`,
-                    width: '2px',
-                    height: '30px',
-                    backgroundColor: 'text.primary',
-                    zIndex: 2,
-                  }}
-                />
-                <Typography
-                  variant="caption"
-                  sx={{
-                    position: 'absolute',
-                    top: '25px',
-                    left: `${getTimelinePosition(new Date().toISOString())}%`,
-                    transform: 'translateX(-50%)',
-                    color: 'text.primary',
-                    fontWeight: 'bold',
-                  }}
-                >
-                  Today
-                </Typography>
-              </Box>
+                {formatDate(startDate.toISOString())}
+              </Typography>
+              <Typography
+                variant="body2"
+                sx={{
+                  position: 'absolute',
+                  right: '10px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  color: 'white',
+                  fontWeight: 'bold',
+                }}
+              >
+                {formatDate(endDate.toISOString())}
+              </Typography>
+              {/* Today marker */}
+              <Box
+                sx={{
+                  position: 'absolute',
+                  top: '0',
+                  left: `${getTimelinePosition(new Date().toISOString())}%`,
+                  width: '2px',
+                  height: '100%',
+                  backgroundColor: 'text.primary',
+                  zIndex: 1,
+                }}
+              />
             </Box>
 
-            {/* Gantt Chart */}
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               {projectNames.map((projectName) => (
                 <Paper
@@ -517,44 +582,20 @@ export const Gantt = () => {
                           sx={{
                             position: 'absolute',
                             left: `${position}%`,
-                            top: '50%',
-                            transform: 'translate(-50%, -50%)',
+                            top: `${(index % 3) * 20}px`,
+                            width: '12px',
+                            height: '12px',
+                            backgroundColor: getTypeColor(item.type),
+                            borderRadius: '50%',
                             cursor: 'pointer',
-                            zIndex: 3,
+                            transform: 'translateX(-50%)',
+                            '&:hover': {
+                              transform: 'translateX(-50%) scale(1.2)',
+                              boxShadow: 2,
+                            },
                           }}
                           onClick={() => handleItemClick(item)}
-                        >
-                          <Box
-                            sx={{
-                              width: '12px',
-                              height: '12px',
-                              borderRadius: '50%',
-                              backgroundColor: getTypeColor(item.type),
-                              border: '2px solid white',
-                              boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-                              '&:hover': {
-                                transform: 'scale(1.2)',
-                                boxShadow: '0 4px 8px rgba(0,0,0,0.3)',
-                              },
-                              transition: 'all 0.2s ease-in-out',
-                            }}
-                          />
-                          <Typography
-                            variant="caption"
-                            sx={{
-                              position: 'absolute',
-                              top: '20px',
-                              left: '50%',
-                              transform: 'translateX(-50%)',
-                              whiteSpace: 'nowrap',
-                              fontSize: '0.7rem',
-                              fontWeight: 'bold',
-                              color: getTypeColor(item.type),
-                            }}
-                          >
-                            {formatDate(item.dueDate)}
-                          </Typography>
-                        </Box>
+                        />
                       );
                     })}
                   </Box>
@@ -588,6 +629,6 @@ export const Gantt = () => {
           </Card>
         )}
       </Container>
-    </>
+    </Box>
   );
 };

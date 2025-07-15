@@ -50,6 +50,8 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [participants, setParticipants] = useState<any[]>([]);
+  const [participantsLoading, setParticipantsLoading] = useState(false);
   const navigate = useNavigate();
 
   // Load accurate permissions when component mounts
@@ -59,6 +61,37 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
       const projectId =
         project.id || (project as any).projectId || (project as any).project_id;
 
+      // Fetch participants if missing from project data
+      if (!project.participants && projectId) {
+        setParticipantsLoading(true);
+
+        try {
+          const response = await fetch(
+            import.meta.env.VITE_SERVER_URL +
+              `/project/${projectId}/participants`,
+            {
+              method: 'GET',
+              credentials: 'include',
+            }
+          );
+
+          if (response.ok) {
+            const participantData = await response.json();
+            setParticipants(participantData || []);
+          } else {
+            setParticipants([]);
+          }
+        } catch (error) {
+          console.error('Error fetching participants:', error);
+          setParticipants([]);
+        } finally {
+          setParticipantsLoading(false);
+        }
+      } else if (project.participants) {
+        // Use existing participant data
+        setParticipants(project.participants);
+      }
+
       if (!projectId) {
         setPermissionsLoading(false);
         return;
@@ -67,16 +100,18 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
       try {
         const status = await communityUtils.getProjectStatus(projectId);
         setPermissions(status.permissions);
-        
+
         // Check for stored pending state first
-        const storedPending = localStorage.getItem(`pending-request-${projectId}`);
-        
+        const storedPending = localStorage.getItem(
+          `pending-request-${projectId}`
+        );
+
         // If we have a stored pending state and no access, show pending
         if (storedPending && !status.permissions.hasAccess) {
           setRequestStatus('pending');
         } else {
           setRequestStatus(status.uiStatus);
-          
+
           // Clear stored pending state if user now has access (request was accepted)
           if (status.permissions.hasAccess && storedPending) {
             localStorage.removeItem(`pending-request-${projectId}`);
@@ -84,10 +119,12 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
         }
       } catch (error) {
         console.error('Failed to load permissions:', error);
-        
+
         // Check for stored pending state in fallback too
-        const storedPending = localStorage.getItem(`pending-request-${projectId}`);
-        
+        const storedPending = localStorage.getItem(
+          `pending-request-${projectId}`
+        );
+
         if (storedPending) {
           setRequestStatus('pending');
         } else {
@@ -372,7 +409,9 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
             <GroupIcon sx={{ color: '#79799a', mr: 1, fontSize: 20 }} />
             <Typography variant="body2" color="text.secondary">
-              {project.participants?.length || 0} members
+              {participantsLoading
+                ? 'Loading members...'
+                : `${(participants?.length || 0) + 1} members`}
             </Typography>
           </Box>
 

@@ -10,89 +10,170 @@ interface TaskWithProject extends Task {
   goalName?: string;
 }
 
+interface Project {
+  id: number;
+  name: string;
+  userRole?: 'owner' | 'participant';
+}
+
+interface Goal {
+  id: number;
+  name: string;
+  projectId: number;
+}
+
 export const HomeScheduleSection = () => {
   const [tasks, setTasks] = useState<TaskWithProject[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    async function fetchTasks() {
+    async function fetchTasksFromAllProjects() {
       try {
         setLoading(true);
         setError(null);
 
-        const response = await fetch(
-          import.meta.env.VITE_SERVER_URL + '/project/tasks/list',
+        // Step 1: Fetch all accessible projects (owned + participated)
+        const ownedProjectsResponse = await fetch(
+          import.meta.env.VITE_SERVER_URL + '/project/list',
           {
             method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-            },
+            headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
           }
         );
 
-        if (!response.ok) {
-          throw new Error('Failed to fetch tasks');
+        let allProjects: Project[] = [];
+
+        // Add owned projects
+        if (ownedProjectsResponse.ok) {
+          const ownedProjects = await ownedProjectsResponse.json();
+          allProjects = ownedProjects.map((project: any) => ({
+            id: project.id,
+            name: project.name,
+            userRole: 'owner' as const,
+          }));
         }
 
-        const data: Task[] = await response.json();
-
-        // Fetch project and goal information for each task
-        const tasksWithProjects = await Promise.all(
-          data.map(async (task) => {
-            let projectName = `Project ${task.projectId}`;
-            let goalName = task.goalId ? `Goal ${task.goalId}` : undefined;
-            try {
-              if (task.projectId) {
-                const projectResponse = await fetch(
-                  `${import.meta.env.VITE_SERVER_URL}/project/${task.projectId}`,
-                  {
-                    method: 'GET',
-                    credentials: 'include',
-                  }
-                );
-                if (projectResponse.ok) {
-                  const projectData = await projectResponse.json();
-                  projectName = projectData.name;
-                }
-              }
-              if (task.goalId) {
-                const goalResponse = await fetch(
-                  `${import.meta.env.VITE_SERVER_URL}/project/${task.projectId}/goal/${task.goalId}`,
-                  {
-                    method: 'GET',
-                    credentials: 'include',
-                  }
-                );
-                if (goalResponse.ok) {
-                  const goalData = await goalResponse.json();
-                  goalName = goalData.name;
-                }
-              }
-            } catch (error) {
-              console.error(
-                'Error fetching project/goal info for task:',
-                error
-              );
+        // Add participated projects (with error handling)
+        try {
+          const participatedProjectsResponse = await fetch(
+            import.meta.env.VITE_SERVER_URL + '/users/me/participated-projects',
+            {
+              method: 'GET',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
             }
-            return {
-              ...task,
-              projectName,
-              goalName,
-            };
-          })
-        );
+          );
 
-        setTasks(tasksWithProjects);
+          if (participatedProjectsResponse.ok) {
+            const participatedProjects =
+              await participatedProjectsResponse.json();
+            const participatedProjectsWithRole = participatedProjects.map(
+              (project: any) => ({
+                id: project.id,
+                name: project.name,
+                userRole: 'participant' as const,
+              })
+            );
+
+            // Merge projects, avoiding duplicates
+            participatedProjectsWithRole.forEach((project: Project) => {
+              if (!allProjects.find((p) => p.id === project.id)) {
+                allProjects.push(project);
+              }
+            });
+          }
+        } catch (error) {
+          console.error('Failed to fetch participated projects:', error);
+          // Continue with only owned projects
+        }
+
+        console.log('All accessible projects for tasks:', allProjects);
+
+        if (allProjects.length === 0) {
+          setTasks([]);
+          return;
+        }
+
+        // Step 2: Fetch goals and tasks from all accessible projects
+        const allTasksPromises = allProjects.map(async (project) => {
+          try {
+            // Fetch goals for this project
+            const goalsResponse = await fetch(
+              `${import.meta.env.VITE_SERVER_URL}/project/${project.id}/goals`,
+              {
+                method: 'GET',
+                credentials: 'include',
+              }
+            );
+
+            let goals: Goal[] = [];
+            if (goalsResponse.ok) {
+              goals = await goalsResponse.json();
+            }
+
+            // Create goal name map for this project
+            const goalMap = new Map<number, string>();
+            goals.forEach((goal) => {
+              goalMap.set(goal.id, goal.name);
+            });
+
+            // Fetch tasks for each goal
+            const projectTasksPromises = goals.map(async (goal) => {
+              try {
+                const tasksResponse = await fetch(
+                  `${import.meta.env.VITE_SERVER_URL}/project/${project.id}/goal/${goal.id}/tasks`,
+                  {
+                    method: 'GET',
+                    credentials: 'include',
+                  }
+                );
+
+                if (tasksResponse.ok) {
+                  const goalTasks = await tasksResponse.json();
+                  return goalTasks.map((task: Task) => ({
+                    ...task,
+                    projectName: project.name,
+                    goalName: goal.name,
+                  }));
+                }
+                return [];
+              } catch (error) {
+                console.error(
+                  `Error fetching tasks for goal ${goal.id}:`,
+                  error
+                );
+                return [];
+              }
+            });
+
+            const projectTasks = await Promise.all(projectTasksPromises);
+            return projectTasks.flat();
+          } catch (error) {
+            console.error(
+              `Error fetching data for project ${project.id}:`,
+              error
+            );
+            return [];
+          }
+        });
+
+        // Step 3: Combine all tasks from all projects
+        const allTasksArrays = await Promise.all(allTasksPromises);
+        const allTasks = allTasksArrays.flat();
+
+        console.log('All tasks from accessible projects:', allTasks);
+        setTasks(allTasks);
       } catch (err) {
+        console.error('Error in fetchTasksFromAllProjects:', err);
         setError((err as Error).message);
       } finally {
         setLoading(false);
       }
     }
 
-    fetchTasks();
+    fetchTasksFromAllProjects();
   }, []);
 
   // Filter tasks for upcoming and overdue

@@ -27,6 +27,13 @@ interface CalendarItem {
   goalId?: number;
 }
 
+interface Project {
+  id: number;
+  name: string;
+  dueDate?: string;
+  userRole?: 'owner' | 'participant';
+}
+
 export const Calendar = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -80,53 +87,73 @@ export const Calendar = () => {
           return;
         }
 
-        // Fetch all data in parallel
-        const [projectsResponse, goalsResponse, tasksResponse] =
-          await Promise.all([
-            fetch(import.meta.env.VITE_SERVER_URL + '/project/list', {
-              method: 'GET',
-              credentials: 'include',
-            }),
-            fetch(import.meta.env.VITE_SERVER_URL + '/project/goals/list', {
-              method: 'GET',
-              credentials: 'include',
-            }),
-            fetch(import.meta.env.VITE_SERVER_URL + '/project/tasks/list', {
-              method: 'GET',
-              credentials: 'include',
-            }),
-          ]);
+        // Step 1: Fetch all accessible projects (owned + participated)
+        const ownedProjectsResponse = await fetch(
+          import.meta.env.VITE_SERVER_URL + '/project/list',
+          {
+            method: 'GET',
+            credentials: 'include',
+          }
+        );
 
-        if (!projectsResponse.ok || !goalsResponse.ok || !tasksResponse.ok) {
-          throw new Error('Failed to fetch calendar data');
+        let allProjects: Project[] = [];
+
+        // Add owned projects
+        if (ownedProjectsResponse.ok) {
+          const ownedProjects = await ownedProjectsResponse.json();
+          console.log('Owned projects:', ownedProjects);
+          allProjects = ownedProjects.map((project: any) => ({
+            id: project.id,
+            name: project.name,
+            dueDate: project.dueDate,
+            userRole: 'owner' as const,
+          }));
         }
 
-        const projects: any[] = await projectsResponse.json();
-        const goals: Goal[] = await goalsResponse.json();
-        const tasks: Task[] = await tasksResponse.json();
+        // Add participated projects (with error handling)
+        try {
+          const participatedProjectsResponse = await fetch(
+            import.meta.env.VITE_SERVER_URL + '/users/me/participated-projects',
+            {
+              method: 'GET',
+              credentials: 'include',
+            }
+          );
 
-        console.log('Projects:', projects);
-        console.log('Goals:', goals);
-        console.log('Tasks:', tasks);
+          if (participatedProjectsResponse.ok) {
+            const participatedProjects =
+              await participatedProjectsResponse.json();
+            console.log('Participated projects:', participatedProjects);
+            const participatedProjectsWithRole = participatedProjects.map(
+              (project: any) => ({
+                id: project.id,
+                name: project.name,
+                dueDate: project.dueDate,
+                userRole: 'participant' as const,
+              })
+            );
 
-        // Create a map of project names for quick lookup
-        const projectMap = new Map();
-        projects.forEach((project) => {
-          projectMap.set(project.id, project.name);
-        });
+            // Merge projects, avoiding duplicates
+            participatedProjectsWithRole.forEach((project: Project) => {
+              if (!allProjects.find((p) => p.id === project.id)) {
+                allProjects.push(project);
+              }
+            });
+          }
+        } catch (error) {
+          console.error('Failed to fetch participated projects:', error);
+          // Continue with only owned projects
+        }
 
-        // Create a map of goal names for quick lookup
-        const goalMap = new Map();
-        goals.forEach((goal) => {
-          goalMap.set(goal.id, goal.name);
-        });
+        console.log('All accessible projects for calendar:', allProjects);
 
-        const allItems: CalendarItem[] = [];
+        // Step 2: Fetch goals and tasks from all accessible projects
+        const allCalendarItemsPromises = allProjects.map(async (project) => {
+          const projectItems: CalendarItem[] = [];
 
-        // Process projects with due dates
-        projects.forEach((project) => {
+          // Add project to calendar if it has a due date
           if (project.dueDate) {
-            allItems.push({
+            projectItems.push({
               id: `project-${project.id}`,
               title: project.name,
               dueDate: project.dueDate,
@@ -135,45 +162,91 @@ export const Calendar = () => {
               projectId: project.id,
             });
           }
-        });
 
-        // Process goals with due dates
-        goals.forEach((goal) => {
-          if (goal.dueDate) {
-            const projectName = projectMap.get(goal.projectId);
-            allItems.push({
-              id: `goal-${goal.id}`,
-              title: goal.name,
-              dueDate: goal.dueDate,
-              type: 'goal',
-              projectName: projectName,
-              goalName: goal.name,
-              projectId: goal.projectId,
-              goalId: goal.id,
-            });
+          try {
+            // Fetch goals for this project
+            const goalsResponse = await fetch(
+              `${import.meta.env.VITE_SERVER_URL}/project/${project.id}/goals`,
+              {
+                method: 'GET',
+                credentials: 'include',
+              }
+            );
+
+            if (goalsResponse.ok) {
+              const goals: Goal[] = await goalsResponse.json();
+              console.log(`Goals for project ${project.id}:`, goals);
+
+              // Process each goal
+              for (const goal of goals) {
+                // Add goal to calendar if it has a due date
+                if (goal.dueDate) {
+                  projectItems.push({
+                    id: `goal-${goal.id}`,
+                    title: goal.name,
+                    dueDate: goal.dueDate,
+                    type: 'goal',
+                    projectName: project.name,
+                    goalName: goal.name,
+                    projectId: project.id,
+                    goalId: goal.id,
+                  });
+                }
+
+                // Fetch tasks for this goal
+                try {
+                  const tasksResponse = await fetch(
+                    `${import.meta.env.VITE_SERVER_URL}/project/${project.id}/goal/${goal.id}/tasks`,
+                    {
+                      method: 'GET',
+                      credentials: 'include',
+                    }
+                  );
+
+                  if (tasksResponse.ok) {
+                    const tasks: Task[] = await tasksResponse.json();
+                    console.log(`Tasks for goal ${goal.id}:`, tasks);
+
+                    // Add tasks with due dates to calendar
+                    tasks.forEach((task) => {
+                      if (task.dueDate) {
+                        projectItems.push({
+                          id: `task-${task.id}`,
+                          title: task.name,
+                          dueDate: task.dueDate,
+                          type: 'task',
+                          priority: task.label,
+                          projectName: project.name,
+                          goalName: goal.name,
+                          projectId: project.id,
+                          goalId: goal.id,
+                        });
+                      }
+                    });
+                  }
+                } catch (error) {
+                  console.error(
+                    `Error fetching tasks for goal ${goal.id}:`,
+                    error
+                  );
+                }
+              }
+            }
+          } catch (error) {
+            console.error(
+              `Error fetching goals for project ${project.id}:`,
+              error
+            );
           }
+
+          return projectItems;
         });
 
-        // Process tasks with due dates
-        tasks.forEach((task) => {
-          if (task.dueDate) {
-            const projectName = projectMap.get(task.projectId);
-            const goalName = goalMap.get(task.goalId);
-            allItems.push({
-              id: `task-${task.id}`,
-              title: task.name,
-              dueDate: task.dueDate,
-              type: 'task',
-              priority: task.label,
-              projectName: projectName,
-              goalName: goalName,
-              projectId: task.projectId,
-              goalId: task.goalId,
-            });
-          }
-        });
+        // Step 3: Combine all calendar items from all projects
+        const allItemsArrays = await Promise.all(allCalendarItemsPromises);
+        const allItems = allItemsArrays.flat();
 
-        console.log('All calendar items:', allItems);
+        console.log('All calendar items from accessible projects:', allItems);
 
         // Sort items by due date
         allItems.sort(
@@ -304,54 +377,154 @@ export const Calendar = () => {
   }
 
   const groupedItems = groupItemsByDate();
-  const sortedDates = Object.keys(groupedItems).sort();
-
-  // Check if current filter has no results
-  const hasFilteredResults = sortedDates.length > 0;
+  const dateKeys = Object.keys(groupedItems).sort();
 
   return (
-    <>
+    <Box sx={{ minHeight: '100vh', backgroundColor: '#2e2e2e' }}>
       <Navbar user={user} />
       <Container
-        maxWidth={false}
+        maxWidth="lg"
         sx={{
-          pt: 3,
-          pb: '80px',
-          px: { xs: 2, sm: 3, md: 4 },
-          minHeight: 'calc(100vh - 70px)',
+          py: 4,
           overflow: 'hidden',
           overflowX: 'hidden',
+          minHeight: 'calc(100vh - 70px)',
         }}
       >
-        <Box sx={{ mb: 4 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-            <Box
-              sx={{
-                backgroundColor: 'primary.main',
-                borderRadius: '50%',
-                p: 1.5,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <CalendarIcon sx={{ color: 'white', fontSize: '1.5rem' }} />
-            </Box>
-            <Box>
-              <Typography
-                variant="h4"
-                component="h1"
-                sx={{ fontWeight: 'bold' }}
-              >
-                Calendar
-              </Typography>
-              <Typography variant="body1" color="text.secondary">
-                View all upcoming deadlines
-              </Typography>
-            </Box>
+        {/* Header */}
+        <Box
+          sx={{
+            mb: 4,
+            p: 3,
+            backgroundColor: 'background.paper',
+            borderRadius: 2,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 2,
+            flexShrink: 0,
+          }}
+        >
+          <CalendarIcon sx={{ fontSize: 40, color: 'primary.main' }} />
+          <Box>
+            <Typography variant="h4" component="h1" gutterBottom>
+              Calendar
+            </Typography>
+            <Typography variant="body1" color="text.secondary">
+              View all your project deadlines, goals, and tasks in one place
+            </Typography>
           </Box>
         </Box>
 
+        {/* Filter Chips */}
+        {calendarItems.length > 0 && (
+          <Box
+            sx={{
+              mb: 3,
+              p: 2,
+              backgroundColor: 'background.paper',
+              borderRadius: 1,
+              display: 'flex',
+              gap: 3,
+              flexWrap: 'wrap',
+              flexShrink: 0,
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Chip
+                label={`${calendarItems.filter((item) => item.type === 'project').length} Projects`}
+                size="small"
+                clickable
+                onClick={() => handleFilterClick('project')}
+                sx={{
+                  backgroundColor:
+                    activeFilter === 'project'
+                      ? getTypeColor('project')
+                      : 'transparent',
+                  color:
+                    activeFilter === 'project'
+                      ? 'white'
+                      : getTypeColor('project'),
+                  fontWeight: 'bold',
+                  border: `2px solid ${getTypeColor('project')}`,
+                  '&:hover': {
+                    backgroundColor: getTypeColor('project'),
+                    color: 'white',
+                  },
+                }}
+              />
+            </Box>
+
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Chip
+                label={`${calendarItems.filter((item) => item.type === 'goal').length} Goals`}
+                size="small"
+                clickable
+                onClick={() => handleFilterClick('goal')}
+                sx={{
+                  backgroundColor:
+                    activeFilter === 'goal'
+                      ? getTypeColor('goal')
+                      : 'transparent',
+                  color:
+                    activeFilter === 'goal' ? 'white' : getTypeColor('goal'),
+                  fontWeight: 'bold',
+                  border: `2px solid ${getTypeColor('goal')}`,
+                  '&:hover': {
+                    backgroundColor: getTypeColor('goal'),
+                    color: 'white',
+                  },
+                }}
+              />
+            </Box>
+
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Chip
+                label={`${calendarItems.filter((item) => item.type === 'task').length} Tasks`}
+                size="small"
+                clickable
+                onClick={() => handleFilterClick('task')}
+                sx={{
+                  backgroundColor:
+                    activeFilter === 'task'
+                      ? getTypeColor('task')
+                      : 'transparent',
+                  color:
+                    activeFilter === 'task' ? 'white' : getTypeColor('task'),
+                  fontWeight: 'bold',
+                  border: `2px solid ${getTypeColor('task')}`,
+                  '&:hover': {
+                    backgroundColor: getTypeColor('task'),
+                    color: 'white',
+                  },
+                }}
+              />
+            </Box>
+
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Chip
+                label={`${calendarItems.length} Total`}
+                size="small"
+                clickable
+                onClick={() => handleFilterClick('all')}
+                sx={{
+                  backgroundColor:
+                    activeFilter === 'all'
+                      ? getTypeColor('all')
+                      : 'transparent',
+                  color: activeFilter === 'all' ? 'white' : getTypeColor('all'),
+                  fontWeight: 'bold',
+                  border: `2px solid ${getTypeColor('all')}`,
+                  '&:hover': {
+                    backgroundColor: getTypeColor('all'),
+                    color: 'white',
+                  },
+                }}
+              />
+            </Box>
+          </Box>
+        )}
+
+        {/* Calendar Items */}
         {calendarItems.length === 0 ? (
           <Box
             sx={{
@@ -367,288 +540,128 @@ export const Calendar = () => {
               No deadlines to display
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              Create projects, goals, and tasks with due dates to see them in
-              the calendar
+              Create projects, goals, and tasks with due dates to see them here
             </Typography>
           </Box>
         ) : (
-          <Card
-            variant="outlined"
-            sx={{
-              p: 3,
-              backgroundColor: 'secondary.main',
-              height: 'calc(100vh - 200px)',
-              display: 'flex',
-              flexDirection: 'column',
-            }}
-          >
-            {/* Fixed Header */}
-            <Box
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 2,
-                mb: 3,
-                flexShrink: 0,
-              }}
-            >
-              <CalendarIcon sx={{ fontSize: 40, color: 'primary.main' }} />
-              <Box>
-                <Typography variant="h5" component="h2" gutterBottom>
-                  Deadline Calendar
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {calendarItems.length} total deadlines
-                </Typography>
-              </Box>
-            </Box>
-
-            {/* Fixed Filter Chips */}
-            {calendarItems.length > 0 && (
-              <Box
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            {dateKeys.map((dateKey) => (
+              <Paper
+                key={dateKey}
+                elevation={2}
                 sx={{
-                  mb: 3,
-                  p: 2,
+                  p: 3,
                   backgroundColor: 'background.paper',
-                  borderRadius: 1,
-                  display: 'flex',
-                  gap: 3,
-                  flexWrap: 'wrap',
-                  flexShrink: 0,
+                  borderRadius: 2,
                 }}
               >
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Chip
-                    label={`${calendarItems.filter((item) => item.type === 'project').length} Projects`}
-                    size="small"
-                    clickable
-                    onClick={() => handleFilterClick('project')}
-                    sx={{
-                      backgroundColor:
-                        activeFilter === 'project'
-                          ? getTypeColor('project')
-                          : 'transparent',
-                      color:
-                        activeFilter === 'project'
-                          ? 'white'
-                          : getTypeColor('project'),
-                      fontWeight: 'bold',
-                      border: `2px solid ${getTypeColor('project')}`,
-                      '&:hover': {
-                        backgroundColor: getTypeColor('project'),
-                        color: 'white',
-                      },
-                    }}
-                  />
-                </Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Chip
-                    label={`${calendarItems.filter((item) => item.type === 'goal').length} Goals`}
-                    size="small"
-                    clickable
-                    onClick={() => handleFilterClick('goal')}
-                    sx={{
-                      backgroundColor:
-                        activeFilter === 'goal'
-                          ? getTypeColor('goal')
-                          : 'transparent',
-                      color:
-                        activeFilter === 'goal'
-                          ? 'white'
-                          : getTypeColor('goal'),
-                      fontWeight: 'bold',
-                      border: `2px solid ${getTypeColor('goal')}`,
-                      '&:hover': {
-                        backgroundColor: getTypeColor('goal'),
-                        color: 'white',
-                      },
-                    }}
-                  />
-                </Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Chip
-                    label={`${calendarItems.filter((item) => item.type === 'task').length} Tasks`}
-                    size="small"
-                    clickable
-                    onClick={() => handleFilterClick('task')}
-                    sx={{
-                      backgroundColor:
-                        activeFilter === 'task'
-                          ? getTypeColor('task')
-                          : 'transparent',
-                      color:
-                        activeFilter === 'task'
-                          ? 'white'
-                          : getTypeColor('task'),
-                      fontWeight: 'bold',
-                      border: `2px solid ${getTypeColor('task')}`,
-                      '&:hover': {
-                        backgroundColor: getTypeColor('task'),
-                        color: 'white',
-                      },
-                    }}
-                  />
-                </Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Chip
-                    label={`Total: ${calendarItems.length} deadlines`}
-                    size="small"
-                    clickable
-                    onClick={() => handleFilterClick('all')}
-                    sx={{
-                      backgroundColor:
-                        activeFilter === 'all'
-                          ? getTypeColor('all')
-                          : 'transparent',
-                      color:
-                        activeFilter === 'all' ? 'white' : getTypeColor('all'),
-                      fontWeight: 'bold',
-                      border: `2px solid ${getTypeColor('all')}`,
-                      '&:hover': {
-                        backgroundColor: getTypeColor('all'),
-                        color: 'white',
-                      },
-                    }}
-                  />
-                </Box>
-              </Box>
-            )}
-
-            {/* Scrollable Calendar Items */}
-            <Box sx={{ flexGrow: 1, overflow: 'auto' }}>
-              {hasFilteredResults ? (
-                <Box>
-                  {sortedDates.map((date) => (
-                    <Paper
-                      key={date}
-                      elevation={2}
-                      sx={{
-                        p: 3,
-                        backgroundColor: 'background.paper',
-                        borderRadius: 2,
-                        mb: 3,
-                      }}
-                    >
-                      <Typography
-                        variant="h6"
-                        sx={{
-                          mb: 2,
-                          fontWeight: 'bold',
-                          color: 'primary.main',
-                          borderBottom: '2px solid',
-                          borderColor: 'primary.main',
-                          pb: 1,
-                        }}
-                      >
-                        {formatDate(date)}
-                      </Typography>
-                      <Grid container spacing={2}>
-                        {groupedItems[date].map((item) => (
-                          <Box
-                            key={item.id}
-                            sx={{
-                              width: { xs: '100%', sm: '50%', md: '33.33%' },
-                              p: 1,
-                              boxSizing: 'border-box',
-                            }}
-                          >
-                            <Card
-                              variant="outlined"
-                              sx={{
-                                p: 2,
-                                cursor: 'pointer',
-                                transition: 'all 0.2s ease-in-out',
-                                '&:hover': {
-                                  transform: 'translateY(-2px)',
-                                  boxShadow: 3,
-                                  borderColor: 'primary.main',
-                                },
-                              }}
-                              onClick={() => handleItemClick(item)}
-                            >
-                              <Box
-                                sx={{
-                                  display: 'flex',
-                                  justifyContent: 'space-between',
-                                  alignItems: 'flex-start',
-                                  mb: 1,
-                                }}
-                              >
-                                <Chip
-                                  label={item.type.toUpperCase()}
-                                  size="small"
-                                  sx={{
-                                    backgroundColor: getTypeColor(item.type),
-                                    color: 'white',
-                                    fontWeight: 'bold',
-                                  }}
-                                />
-                                {item.priority && (
-                                  <Chip
-                                    label={item.priority}
-                                    size="small"
-                                    sx={{
-                                      backgroundColor: getPriorityColor(
-                                        item.priority
-                                      ),
-                                      color: 'white',
-                                      fontWeight: 'bold',
-                                    }}
-                                  />
-                                )}
-                              </Box>
-                              <Typography
-                                variant="h6"
-                                sx={{ mb: 1, fontWeight: 'medium' }}
-                              >
-                                {item.title}
-                              </Typography>
-                              <Typography
-                                variant="body2"
-                                color="text.secondary"
-                                sx={{ mb: 1 }}
-                              >
-                                {item.projectName}
-                              </Typography>
-                              {item.goalName && (
-                                <Typography
-                                  variant="body2"
-                                  color="text.secondary"
-                                  sx={{ mb: 1 }}
-                                >
-                                  Goal: {item.goalName}
-                                </Typography>
-                              )}
-                            </Card>
-                          </Box>
-                        ))}
-                      </Grid>
-                    </Paper>
-                  ))}
-                </Box>
-              ) : (
-                <Box
+                <Typography
+                  variant="h6"
                   sx={{
-                    p: 4,
-                    textAlign: 'center',
-                    backgroundColor: 'background.paper',
-                    borderRadius: 2,
-                    border: '1px dashed',
-                    borderColor: 'divider',
+                    mb: 2,
+                    fontWeight: 'bold',
+                    color: 'primary.main',
+                    borderBottom: '2px solid',
+                    borderColor: 'primary.main',
+                    pb: 1,
                   }}
                 >
-                  <Typography variant="h6" color="text.secondary" gutterBottom>
-                    No items match the current filter
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Try changing the filter or create new items with due dates
-                  </Typography>
+                  {formatDate(dateKey)}
+                </Typography>
+
+                <Box
+                  sx={{
+                    display: 'grid',
+                    gridTemplateColumns: {
+                      xs: '1fr',
+                      sm: 'repeat(2, 1fr)',
+                      md: 'repeat(3, 1fr)',
+                    },
+                    gap: 2,
+                  }}
+                >
+                  {groupedItems[dateKey].map((item) => (
+                    <Card
+                      key={item.id}
+                      variant="outlined"
+                      sx={{
+                        p: 2,
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease-in-out',
+                        '&:hover': {
+                          transform: 'translateY(-2px)',
+                          boxShadow: 3,
+                          borderColor: getTypeColor(item.type),
+                        },
+                      }}
+                      onClick={() => handleItemClick(item)}
+                    >
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'flex-start',
+                          mb: 1,
+                        }}
+                      >
+                        <Chip
+                          label={item.type.toUpperCase()}
+                          size="small"
+                          sx={{
+                            backgroundColor: getTypeColor(item.type),
+                            color: 'white',
+                            fontWeight: 'bold',
+                            fontSize: '0.7rem',
+                          }}
+                        />
+                        {item.priority && (
+                          <Chip
+                            label={item.priority}
+                            size="small"
+                            sx={{
+                              backgroundColor: getPriorityColor(item.priority),
+                              color: 'white',
+                              fontWeight: 'bold',
+                              fontSize: '0.7rem',
+                            }}
+                          />
+                        )}
+                      </Box>
+
+                      <Typography
+                        variant="subtitle1"
+                        sx={{ fontWeight: 'bold', mb: 1 }}
+                      >
+                        {item.title}
+                      </Typography>
+
+                      {item.projectName && (
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          sx={{ mb: 0.5 }}
+                        >
+                          📁 {item.projectName}
+                        </Typography>
+                      )}
+
+                      {item.goalName && (
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          sx={{ mb: 0.5 }}
+                        >
+                          🎯 {item.goalName}
+                        </Typography>
+                      )}
+                    </Card>
+                  ))}
                 </Box>
-              )}
-            </Box>
-          </Card>
+              </Paper>
+            ))}
+          </Box>
         )}
       </Container>
-    </>
+    </Box>
   );
 };

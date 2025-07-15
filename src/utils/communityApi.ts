@@ -19,16 +19,82 @@ const defaultFetchOptions = {
 export const communityApi = {
   // Browse all projects in the community
   async browseProjects(): Promise<Project[]> {
-    const response = await fetch(`${API_BASE_URL}/community/browse`, {
-      method: 'GET',
-      ...defaultFetchOptions,
-    });
+    console.log(
+      'Making browse request to:',
+      `${API_BASE_URL}/community/browse`
+    );
 
-    if (!response.ok) {
-      throw new Error('Failed to fetch community projects');
+    try {
+      const response = await fetch(`${API_BASE_URL}/community/browse`, {
+        method: 'GET',
+        ...defaultFetchOptions,
+      });
+
+      console.log('Browse response status:', response.status);
+
+      if (!response.ok) {
+        let errorMessage = 'Failed to fetch community projects';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorMessage;
+        } catch (jsonError) {
+          // If we can't parse the error response, use the status text
+          errorMessage = `${errorMessage} (${response.status}: ${response.statusText})`;
+        }
+        throw new Error(errorMessage);
+      }
+
+      const data = await response.json();
+
+      // Validate that we got an array
+      if (!Array.isArray(data)) {
+        console.warn('Browse response is not an array:', data);
+        return [];
+      }
+
+      // ENHANCEMENT: Enrich browse results with participant data if missing
+      // This ensures member counts display correctly in ProjectCard components
+      const hasParticipantData =
+        data.length > 0 && data[0].participants !== undefined;
+
+      if (!hasParticipantData && data.length > 0) {
+        const enrichedBrowseData = await Promise.all(
+          data.map(async (project: any) => {
+            try {
+              const response = await fetch(
+                `${API_BASE_URL}/project/${project.id}/participants`,
+                {
+                  method: 'GET',
+                  ...defaultFetchOptions,
+                }
+              );
+
+              const participants = response.ok ? await response.json() : [];
+              return {
+                ...project,
+                participants: participants,
+              };
+            } catch (error) {
+              console.warn(
+                `Failed to fetch participants for browse project ${project.id}:`,
+                error
+              );
+              return {
+                ...project,
+                participants: [],
+              };
+            }
+          })
+        );
+
+        return enrichedBrowseData;
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error in browseProjects:', error);
+      throw error;
     }
-
-    return response.json();
   },
 
   // Search projects by name/keywords
@@ -43,19 +109,112 @@ export const communityApi = {
       limit: limit.toString(),
     });
 
-    const response = await fetch(
-      `${API_BASE_URL}/community/search?${searchParams}`,
-      {
-        method: 'GET',
-        ...defaultFetchOptions,
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/community/search?${searchParams}`,
+        {
+          method: 'GET',
+          ...defaultFetchOptions,
+        }
+      );
+
+      if (!response.ok) {
+        let errorMessage = 'Failed to search projects';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorMessage;
+        } catch (jsonError) {
+          // If we can't parse the error response, use the status text
+          errorMessage = `${errorMessage} (${response.status}: ${response.statusText})`;
+        }
+        throw new Error(errorMessage);
       }
-    );
 
-    if (!response.ok) {
-      throw new Error('Failed to search projects');
+      const data = await response.json();
+
+      // Validate the response structure
+      if (!data || typeof data !== 'object') {
+        throw new Error('Invalid search response format');
+      }
+
+      // Handle different backend response formats
+      // Backend returns 'results' but frontend expects 'projects'
+      const projectsArray = Array.isArray(data.projects)
+        ? data.projects
+        : Array.isArray(data.results)
+          ? data.results
+          : [];
+
+      // TEMPORARY WORKAROUND: Client-side filtering since backend search doesn't filter properly
+      // TODO: Remove this when backend search endpoint is fixed
+      const filteredProjects = projectsArray.filter((project: any) => {
+        if (!project.name) return false;
+        const projectName = project.name.toLowerCase();
+        const searchTerm = query.toLowerCase();
+
+        // Check if project name contains the search term
+        const nameMatch = projectName.includes(searchTerm);
+
+        // Also check description if it exists
+        const descriptionMatch =
+          project.description &&
+          project.description.toLowerCase().includes(searchTerm);
+
+        return nameMatch || descriptionMatch;
+      });
+
+      // ENHANCEMENT: Enrich search results with participant data if missing
+      // This ensures member counts display correctly in ProjectCard components
+      const enrichedProjects = await Promise.all(
+        filteredProjects.map(async (project: any) => {
+          // If project already has participants data, use it
+          if (project.participants && Array.isArray(project.participants)) {
+            return project;
+          }
+
+          // Otherwise, fetch participant data
+          try {
+            const response = await fetch(
+              `${API_BASE_URL}/project/${project.id}/participants`,
+              {
+                method: 'GET',
+                ...defaultFetchOptions,
+              }
+            );
+
+            const participants = response.ok ? await response.json() : [];
+            return {
+              ...project,
+              participants: participants,
+            };
+          } catch (error) {
+            console.warn(
+              `Failed to fetch participants for project ${project.id}:`,
+              error
+            );
+            // Return project with empty participants array as fallback
+            return {
+              ...project,
+              participants: [],
+            };
+          }
+        })
+      );
+
+      // Provide default values if the response is missing expected fields
+      const validatedResponse: CommunitySearchResponse = {
+        projects: enrichedProjects, // Use enriched projects
+        total: enrichedProjects.length, // Use filtered count instead of backend total
+        page: typeof data.page === 'number' ? data.page : page,
+        limit: typeof data.limit === 'number' ? data.limit : limit,
+        totalPages: Math.ceil(enrichedProjects.length / limit), // Recalculate based on filtered results
+      };
+
+      return validatedResponse;
+    } catch (error) {
+      console.error('Error in searchProjects:', error);
+      throw error;
     }
-
-    return response.json();
   },
 
   // Request to join a project

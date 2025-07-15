@@ -4,6 +4,7 @@ import {
   Alert,
   Typography,
   Button,
+  Chip,
 } from '@mui/material';
 import { Add as AddIcon } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
@@ -18,6 +19,7 @@ interface Project {
   description: string;
   category?: string;
   dueDate?: string;
+  userRole?: 'owner' | 'participant';
 }
 
 export const HomeTopSection = () => {
@@ -32,7 +34,8 @@ export const HomeTopSection = () => {
         setLoading(true);
         setError(null);
 
-        const response = await fetch(
+        // Fetch owned projects
+        const ownedProjectsResponse = await fetch(
           import.meta.env.VITE_SERVER_URL + '/project/list',
           {
             method: 'GET',
@@ -43,12 +46,58 @@ export const HomeTopSection = () => {
           }
         );
 
-        if (!response.ok) {
-          throw new Error('Failed to fetch projects');
+        let allProjects: Project[] = [];
+
+        if (ownedProjectsResponse.ok) {
+          const ownedProjects = await ownedProjectsResponse.json();
+          console.log('Owned projects:', ownedProjects);
+          // Add role property to distinguish ownership
+          allProjects = ownedProjects.map((project: any) => ({
+            ...project,
+            userRole: 'owner' as const,
+          }));
         }
 
-        const data: Project[] = await response.json();
-        setProjects(data);
+        // Fetch projects where user is a participant
+        try {
+          const participantProjectsResponse = await fetch(
+            import.meta.env.VITE_SERVER_URL + '/users/me/participated-projects',
+            {
+              method: 'GET',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              credentials: 'include',
+            }
+          );
+
+          if (participantProjectsResponse.ok) {
+            const participantProjects =
+              await participantProjectsResponse.json();
+            console.log('Participated projects:', participantProjects);
+            // Add role property and merge with owned projects
+            const participantProjectsWithRole = participantProjects.map(
+              (project: any) => ({
+                ...project,
+                userRole: 'participant' as const,
+              })
+            );
+
+            // Merge projects, avoiding duplicates
+            participantProjectsWithRole.forEach((project: any) => {
+              if (!allProjects.find((p) => p.id === project.id)) {
+                allProjects.push(project);
+              }
+            });
+          } else {
+            console.error('Failed to fetch participated projects');
+          }
+        } catch (error) {
+          console.error('Error fetching participated projects:', error);
+        }
+
+        console.log('All projects (owned + participated):', allProjects);
+        setProjects(allProjects);
       } catch (err) {
         setError((err as Error).message);
       } finally {
@@ -58,6 +107,12 @@ export const HomeTopSection = () => {
 
     fetchProjects();
   }, []);
+
+  // Calculate project counts
+  const ownedCount = projects.filter((p) => p.userRole === 'owner').length;
+  const participantCount = projects.filter(
+    (p) => p.userRole === 'participant'
+  ).length;
 
   if (loading) {
     return (
@@ -112,7 +167,22 @@ export const HomeTopSection = () => {
           mb: 3,
         }}
       >
-        <HomeTitle title="Projects" fontSize="30px" />
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+          <HomeTitle title="Projects" fontSize="30px" />
+          {projects.length > 0 && (
+            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+              <Typography variant="body2" color="text.secondary">
+                {projects.length} total project
+                {projects.length !== 1 ? 's' : ''}
+              </Typography>
+              {ownedCount > 0 && participantCount > 0 && (
+                <Typography variant="body2" color="text.secondary">
+                  ({ownedCount} owned, {participantCount} as member)
+                </Typography>
+              )}
+            </Box>
+          )}
+        </Box>
         <Button
           variant="contained"
           startIcon={<AddIcon />}
@@ -173,7 +243,7 @@ export const HomeTopSection = () => {
                 color="primary"
                 onClick={() => navigate('/project/list')}
               >
-                View All Projects
+                View All Projects ({projects.length})
               </Button>
             </Box>
           )}

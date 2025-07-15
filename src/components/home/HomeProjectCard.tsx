@@ -9,6 +9,8 @@ import {
 import {
   Assignment as ProjectIcon,
   CalendarToday as CalendarIcon,
+  Star as StarIcon,
+  Group as GroupIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { formatDate } from '../../utils/dateUtils';
@@ -20,6 +22,7 @@ interface HomeProjectCardProps {
     description: string;
     category?: string;
     dueDate?: string;
+    userRole?: 'owner' | 'participant';
   };
 }
 
@@ -61,7 +64,7 @@ export const HomeProjectCard = ({ project }: HomeProjectCardProps) => {
         <CardContent
           sx={{ flexGrow: 1, p: 2.5, display: 'flex', flexDirection: 'column' }}
         >
-          {/* Header with Icon and Title */}
+          {/* Header with Icon, Title, and Role */}
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 2.5 }}>
             <Box
               sx={{
@@ -76,20 +79,42 @@ export const HomeProjectCard = ({ project }: HomeProjectCardProps) => {
             >
               <ProjectIcon sx={{ color: 'white', fontSize: '1.2rem' }} />
             </Box>
-            <Typography
-              variant="h6"
-              component="h3"
-              sx={{
-                fontWeight: 'bold',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-                color: 'text.primary',
-                fontSize: '1.1rem',
-              }}
-            >
-              {project.name}
-            </Typography>
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+              <Typography
+                variant="h6"
+                component="h3"
+                sx={{
+                  fontWeight: 'bold',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                  color: 'text.primary',
+                  fontSize: '1.1rem',
+                  mb: 0.5,
+                }}
+              >
+                {project.name}
+              </Typography>
+              {/* Role Chip */}
+              {project.userRole && (
+                <Chip
+                  icon={
+                    project.userRole === 'owner' ? <StarIcon /> : <GroupIcon />
+                  }
+                  label={project.userRole === 'owner' ? 'Owner' : 'Member'}
+                  size="small"
+                  color={project.userRole === 'owner' ? 'primary' : 'secondary'}
+                  variant="outlined"
+                  sx={{
+                    fontSize: '0.75rem',
+                    height: '20px',
+                    '& .MuiChip-icon': {
+                      fontSize: '0.9rem',
+                    },
+                  }}
+                />
+              )}
+            </Box>
           </Box>
 
           {/* Description */}
@@ -115,23 +140,22 @@ export const HomeProjectCard = ({ project }: HomeProjectCardProps) => {
           {/* Chips Section */}
           <Box
             sx={{
-              mt: 'auto',
               display: 'flex',
-              flexDirection: 'column',
               gap: 1,
+              flexWrap: 'wrap',
+              alignItems: 'center',
+              mt: 'auto',
             }}
           >
             {project.category && (
               <Chip
                 label={project.category}
                 size="small"
-                color="success"
-                variant="filled"
+                color="primary"
+                variant="outlined"
                 sx={{
-                  fontWeight: 'bold',
                   fontSize: '0.75rem',
-                  height: '24px',
-                  alignSelf: 'flex-start',
+                  textTransform: 'capitalize',
                 }}
               />
             )}
@@ -140,17 +164,13 @@ export const HomeProjectCard = ({ project }: HomeProjectCardProps) => {
                 icon={<CalendarIcon />}
                 label={formatDate(project.dueDate)}
                 size="small"
-                color="warning"
-                variant="filled"
+                variant="outlined"
                 sx={{
-                  pl: 1,
-                  fontWeight: 'bold',
                   fontSize: '0.75rem',
-                  height: '24px',
-                  alignSelf: 'flex-start',
+                  pl: 1,
                   '& .MuiChip-icon': {
                     ml: 0.5,
-                    fontSize: '0.9rem',
+                    fontSize: '1rem',
                   },
                 }}
               />

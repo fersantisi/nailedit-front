@@ -71,8 +71,8 @@ export const ProjectList = () => {
           return;
         }
 
-        // Fetch all projects
-        const projectsResponse = await fetch(
+        // Fetch owned projects
+        const ownedProjectsResponse = await fetch(
           import.meta.env.VITE_SERVER_URL + '/project/list',
           {
             method: 'GET',
@@ -80,13 +80,55 @@ export const ProjectList = () => {
           }
         );
 
-        if (!projectsResponse.ok) {
-          throw new Error('Failed to fetch projects');
+        let allProjects: any[] = [];
+
+        if (ownedProjectsResponse.ok) {
+          const ownedProjects = await ownedProjectsResponse.json();
+          console.log('Owned projects:', ownedProjects);
+          // Add role property to distinguish ownership
+          allProjects = ownedProjects.map((project: any) => ({
+            ...project,
+            userRole: 'owner',
+          }));
         }
 
-        const projectsData = await projectsResponse.json();
-        console.log('Projects:', projectsData);
-        setProjects(projectsData);
+        // Fetch projects where user is a participant
+        try {
+          const participantProjectsResponse = await fetch(
+            import.meta.env.VITE_SERVER_URL + '/users/me/participated-projects',
+            {
+              method: 'GET',
+              credentials: 'include',
+            }
+          );
+
+          if (participantProjectsResponse.ok) {
+            const participantProjects =
+              await participantProjectsResponse.json();
+            console.log('Participated projects:', participantProjects);
+            // Add role property and merge with owned projects
+            const participantProjectsWithRole = participantProjects.map(
+              (project: any) => ({
+                ...project,
+                userRole: 'participant',
+              })
+            );
+
+            // Merge projects, avoiding duplicates
+            participantProjectsWithRole.forEach((project: any) => {
+              if (!allProjects.find((p) => p.id === project.id)) {
+                allProjects.push(project);
+              }
+            });
+          } else {
+            console.error('Failed to fetch participated projects');
+          }
+        } catch (error) {
+          console.error('Error fetching participated projects:', error);
+        }
+
+        console.log('All projects (owned + participated):', allProjects);
+        setProjects(allProjects);
       } catch (error) {
         console.error('Error fetching projects:', error);
         setError('An error occurred while loading projects');
@@ -286,7 +328,10 @@ export const ProjectList = () => {
                   Project Overview
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  {projects.length} total projects
+                  {projects.length} total projects (
+                  {projects.filter((p) => p.userRole === 'owner').length} owned,{' '}
+                  {projects.filter((p) => p.userRole === 'participant').length}{' '}
+                  as member)
                 </Typography>
               </Box>
             </Box>
@@ -384,18 +429,40 @@ export const ProjectList = () => {
                             gap: 1,
                           }}
                         >
-                          <Chip
-                            label={project.category || 'Uncategorized'}
-                            size="small"
-                            color="success"
-                            variant="filled"
-                            sx={{
-                              fontWeight: 'bold',
-                              fontSize: '0.75rem',
-                              height: '24px',
-                              alignSelf: 'flex-start',
-                            }}
-                          />
+                          <Box
+                            sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}
+                          >
+                            <Chip
+                              label={project.category || 'Uncategorized'}
+                              size="small"
+                              color="success"
+                              variant="filled"
+                              sx={{
+                                fontWeight: 'bold',
+                                fontSize: '0.75rem',
+                                height: '24px',
+                              }}
+                            />
+                            <Chip
+                              label={
+                                project.userRole === 'owner'
+                                  ? 'Owner'
+                                  : 'Member'
+                              }
+                              size="small"
+                              color={
+                                project.userRole === 'owner'
+                                  ? 'primary'
+                                  : 'secondary'
+                              }
+                              variant="outlined"
+                              sx={{
+                                fontWeight: 'bold',
+                                fontSize: '0.75rem',
+                                height: '24px',
+                              }}
+                            />
+                          </Box>
                           {project.dueDate && (
                             <Chip
                               icon={<CalendarIcon />}
