@@ -20,7 +20,6 @@ import {
   Snackbar,
   Card,
   CardContent,
-  Chip,
   Container,
   Fab,
   Tooltip,
@@ -513,9 +512,6 @@ export const ShoppingListPage = () => {
                         Unit
                       </TableCell>
                       <TableCell sx={{ color: '#e2e2e2', fontWeight: 'bold' }}>
-                        Status
-                      </TableCell>
-                      <TableCell sx={{ color: '#e2e2e2', fontWeight: 'bold' }}>
                         Actions
                       </TableCell>
                     </TableRow>
@@ -531,9 +527,6 @@ export const ShoppingListPage = () => {
                         </TableCell>
                         <TableCell sx={{ color: '#e2e2e2' }}>
                           {item.stockItem?.unit || 'N/A'}
-                        </TableCell>
-                        <TableCell>
-                          <Chip label="Pending" color="warning" size="small" />
                         </TableCell>
                         <TableCell>
                           <Tooltip title="Edit Quantity">
@@ -600,9 +593,6 @@ export const ShoppingListPage = () => {
                         Unit
                       </TableCell>
                       <TableCell sx={{ color: '#e2e2e2', fontWeight: 'bold' }}>
-                        Status
-                      </TableCell>
-                      <TableCell sx={{ color: '#e2e2e2', fontWeight: 'bold' }}>
                         Bought Date
                       </TableCell>
                     </TableRow>
@@ -618,9 +608,6 @@ export const ShoppingListPage = () => {
                         </TableCell>
                         <TableCell sx={{ color: '#e2e2e2' }}>
                           {item.stockItem?.unit || 'N/A'}
-                        </TableCell>
-                        <TableCell>
-                          <Chip label="Bought" color="success" size="small" />
                         </TableCell>
                         <TableCell sx={{ color: '#e2e2e2' }}>
                           {new Date(item.updatedAt).toLocaleDateString()}
