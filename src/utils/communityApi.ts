@@ -17,20 +17,24 @@ const defaultFetchOptions = {
 
 // Community Discovery Endpoints
 export const communityApi = {
-  // Browse all projects in the community
-  async browseProjects(): Promise<Project[]> {
-    console.log(
-      'Making browse request to:',
-      `${API_BASE_URL}/community/browse`
-    );
+  // Browse all projects in the community with pagination
+  async browseProjects(
+    page: number = 1,
+    limit: number = 3
+  ): Promise<CommunitySearchResponse> {
+    const searchParams = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+    });
 
     try {
-      const response = await fetch(`${API_BASE_URL}/community/browse`, {
-        method: 'GET',
-        ...defaultFetchOptions,
-      });
-
-      console.log('Browse response status:', response.status);
+      const response = await fetch(
+        `${API_BASE_URL}/community/browse?${searchParams}`,
+        {
+          method: 'GET',
+          ...defaultFetchOptions,
+        }
+      );
 
       if (!response.ok) {
         let errorMessage = 'Failed to fetch community projects';
@@ -46,20 +50,34 @@ export const communityApi = {
 
       const data = await response.json();
 
-      // Validate that we got an array
-      if (!Array.isArray(data)) {
-        console.warn('Browse response is not an array:', data);
-        return [];
+      // Validate the new paginated response structure
+      if (!data || typeof data !== 'object' || !Array.isArray(data.results)) {
+        console.warn(
+          'Browse response is not in expected paginated format:',
+          data
+        );
+        // Fallback for old format compatibility
+        if (Array.isArray(data)) {
+          return {
+            projects: data,
+            total: data.length,
+            page: 1,
+            limit: data.length,
+            totalPages: 1,
+          };
+        }
+        throw new Error('Invalid browse response format');
       }
 
       // ENHANCEMENT: Enrich browse results with participant data if missing
       // This ensures member counts display correctly in ProjectCard components
+      const projectsArray = data.results;
       const hasParticipantData =
-        data.length > 0 && data[0].participants !== undefined;
+        projectsArray.length > 0 && projectsArray[0].participants !== undefined;
 
-      if (!hasParticipantData && data.length > 0) {
-        const enrichedBrowseData = await Promise.all(
-          data.map(async (project: any) => {
+      if (!hasParticipantData && projectsArray.length > 0) {
+        const enrichedProjects = await Promise.all(
+          projectsArray.map(async (project: any) => {
             try {
               const response = await fetch(
                 `${API_BASE_URL}/project/${project.id}/participants`,
@@ -87,10 +105,27 @@ export const communityApi = {
           })
         );
 
-        return enrichedBrowseData;
+        return {
+          projects: enrichedProjects,
+          total: data.total || enrichedProjects.length,
+          page: data.page || page,
+          limit: data.limit || limit,
+          totalPages:
+            data.totalPages ||
+            Math.ceil((data.total || enrichedProjects.length) / limit),
+        };
       }
 
-      return data;
+      // Return the paginated response in the expected format
+      return {
+        projects: projectsArray,
+        total: data.total || projectsArray.length,
+        page: data.page || page,
+        limit: data.limit || limit,
+        totalPages:
+          data.totalPages ||
+          Math.ceil((data.total || projectsArray.length) / limit),
+      };
     } catch (error) {
       console.error('Error in browseProjects:', error);
       throw error;
@@ -101,10 +136,10 @@ export const communityApi = {
   async searchProjects(
     query: string,
     page: number = 1,
-    limit: number = 10
+    limit: number = 3
   ): Promise<CommunitySearchResponse> {
     const searchParams = new URLSearchParams({
-      query,
+      q: query, // Backend uses 'q' parameter for search query
       page: page.toString(),
       limit: limit.toString(),
     });
@@ -133,40 +168,21 @@ export const communityApi = {
       const data = await response.json();
 
       // Validate the response structure
-      if (!data || typeof data !== 'object') {
+      if (!data || typeof data !== 'object' || !Array.isArray(data.results)) {
+        console.warn(
+          'Search response is not in expected paginated format:',
+          data
+        );
         throw new Error('Invalid search response format');
       }
 
-      // Handle different backend response formats
-      // Backend returns 'results' but frontend expects 'projects'
-      const projectsArray = Array.isArray(data.projects)
-        ? data.projects
-        : Array.isArray(data.results)
-          ? data.results
-          : [];
-
-      // TEMPORARY WORKAROUND: Client-side filtering since backend search doesn't filter properly
-      // TODO: Remove this when backend search endpoint is fixed
-      const filteredProjects = projectsArray.filter((project: any) => {
-        if (!project.name) return false;
-        const projectName = project.name.toLowerCase();
-        const searchTerm = query.toLowerCase();
-
-        // Check if project name contains the search term
-        const nameMatch = projectName.includes(searchTerm);
-
-        // Also check description if it exists
-        const descriptionMatch =
-          project.description &&
-          project.description.toLowerCase().includes(searchTerm);
-
-        return nameMatch || descriptionMatch;
-      });
+      // Backend now properly filters results, so no client-side filtering needed
+      const projectsArray = data.results;
 
       // ENHANCEMENT: Enrich search results with participant data if missing
       // This ensures member counts display correctly in ProjectCard components
       const enrichedProjects = await Promise.all(
-        filteredProjects.map(async (project: any) => {
+        projectsArray.map(async (project: any) => {
           // If project already has participants data, use it
           if (project.participants && Array.isArray(project.participants)) {
             return project;
@@ -201,16 +217,16 @@ export const communityApi = {
         })
       );
 
-      // Provide default values if the response is missing expected fields
-      const validatedResponse: CommunitySearchResponse = {
-        projects: enrichedProjects, // Use enriched projects
-        total: enrichedProjects.length, // Use filtered count instead of backend total
-        page: typeof data.page === 'number' ? data.page : page,
-        limit: typeof data.limit === 'number' ? data.limit : limit,
-        totalPages: Math.ceil(enrichedProjects.length / limit), // Recalculate based on filtered results
+      // Return the paginated response in the expected format
+      return {
+        projects: enrichedProjects,
+        total: data.total || enrichedProjects.length,
+        page: data.page || page,
+        limit: data.limit || limit,
+        totalPages:
+          data.totalPages ||
+          Math.ceil((data.total || enrichedProjects.length) / limit),
       };
-
-      return validatedResponse;
     } catch (error) {
       console.error('Error in searchProjects:', error);
       throw error;

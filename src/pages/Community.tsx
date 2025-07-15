@@ -34,6 +34,7 @@ export const Community: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [totalProjects, setTotalProjects] = useState(0);
   const [isSearchMode, setIsSearchMode] = useState(false);
   const navigate = useNavigate();
 
@@ -83,7 +84,7 @@ export const Community: React.FC = () => {
       }
 
       // Fetch community projects
-      await loadProjects();
+      await loadProjects(1);
     } catch (error) {
       console.error('Error fetching data:', error);
       setError('Failed to load community data');
@@ -92,10 +93,13 @@ export const Community: React.FC = () => {
     }
   };
 
-  const loadProjects = async () => {
+  const loadProjects = async (page: number = 1) => {
     try {
-      const projectsData = await communityApi.browseProjects();
-      setProjects(projectsData);
+      const browseResult = await communityApi.browseProjects(page);
+      setProjects(browseResult.projects);
+      setCurrentPage(browseResult.page);
+      setTotalPages(browseResult.totalPages);
+      setTotalProjects(browseResult.total);
       setIsSearchMode(false);
       setError(null); // Clear any previous errors
     } catch (error) {
@@ -121,7 +125,7 @@ export const Community: React.FC = () => {
 
   const handleSearch = async (query: string, page: number = 1) => {
     if (!query.trim()) {
-      await loadProjects();
+      await loadProjects(page);
       return;
     }
 
@@ -129,13 +133,11 @@ export const Community: React.FC = () => {
       setSearchLoading(true);
       setError(null);
 
-      console.log('Searching with query:', query, 'page:', page);
       const searchResult = await communityApi.searchProjects(query, page);
-      console.log('Search result:', searchResult);
-
       setProjects(searchResult.projects);
       setTotalPages(searchResult.totalPages);
-      setCurrentPage(page);
+      setTotalProjects(searchResult.total);
+      setCurrentPage(searchResult.page);
       setIsSearchMode(true);
     } catch (error) {
       console.error('Error searching projects:', error);
@@ -155,7 +157,7 @@ export const Community: React.FC = () => {
       // Reset to browse mode if search fails
       setIsSearchMode(false);
       try {
-        await loadProjects();
+        await loadProjects(1);
       } catch (browseError) {
         console.error(
           'Error loading projects after search failure:',
@@ -185,6 +187,8 @@ export const Community: React.FC = () => {
     setCurrentPage(value);
     if (isSearchMode) {
       handleSearch(searchQuery, value);
+    } else {
+      loadProjects(value);
     }
   };
 
@@ -192,7 +196,8 @@ export const Community: React.FC = () => {
     setSearchQuery('');
     setCurrentPage(1);
     setTotalPages(1);
-    loadProjects();
+    setTotalProjects(0);
+    loadProjects(1);
   };
 
   const handleRequestSent = () => {
@@ -200,7 +205,7 @@ export const Community: React.FC = () => {
     if (isSearchMode) {
       handleSearch(searchQuery, currentPage);
     } else {
-      loadProjects();
+      loadProjects(currentPage);
     }
   };
 
@@ -355,8 +360,15 @@ export const Community: React.FC = () => {
           <Typography variant="body1" color="text.secondary">
             {searchLoading
               ? 'Searching...'
-              : `Found ${projects.length} project${projects.length !== 1 ? 's' : ''}`}
+              : isSearchMode
+                ? `Found ${totalProjects} project${totalProjects !== 1 ? 's' : ''} matching "${searchQuery}"`
+                : `Showing ${projects.length} of ${totalProjects} project${totalProjects !== 1 ? 's' : ''}`}
           </Typography>
+          {totalPages > 1 && (
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+              Page {currentPage} of {totalPages}
+            </Typography>
+          )}
         </Box>
 
         {/* Projects Grid */}
@@ -417,8 +429,8 @@ export const Community: React.FC = () => {
           </Grid>
         )}
 
-        {/* Pagination */}
-        {isSearchMode && totalPages > 1 && (
+        {/* Pagination - Show for both browse and search when multiple pages exist */}
+        {totalPages > 1 && (
           <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
             <Pagination
               count={totalPages}
@@ -426,6 +438,8 @@ export const Community: React.FC = () => {
               onChange={handlePageChange}
               color="primary"
               size="large"
+              showFirstButton
+              showLastButton
             />
           </Box>
         )}
