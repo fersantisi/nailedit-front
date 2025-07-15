@@ -103,3 +103,19 @@ export type ProjectPermissions = {
 };
 
 export type UserRole = 'owner' | 'participant' | 'none';
+
+export type ShoppingListItem = {
+  id: number;
+  stockId: number;
+  userId: number;
+  quantity: number;
+  status: 'pending' | 'bought';
+  createdAt: string;
+  updatedAt: string;
+  stockItem: Stock;
+};
+
+export type ShoppingListResponse = {
+  items: ShoppingListItem[];
+  total: number;
+};

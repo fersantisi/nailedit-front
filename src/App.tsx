@@ -22,6 +22,7 @@ import { ProjectList } from './pages/ProjectList';
 import { Gantt } from './pages/Gantt';
 import { StockPage } from './pages/Stock';
 import { Community } from './pages/Community';
+import { ShoppingListPage } from './pages/ShoppingList';
 
 const theme = createTheme({
   palette: {
@@ -97,6 +98,7 @@ function App() {
           <Route path="/calendar" element={<Calendar />} />
           <Route path="/gantt" element={<Gantt />} />
           <Route path="/stock" element={<StockPage />} />
+          <Route path="/shopping-list" element={<ShoppingListPage />} />
           <Route path="/community" element={<Community />} />
           <Route path="/project/list" element={<ProjectList />} />
           <Route path="/project/:id" element={<Project />} />
