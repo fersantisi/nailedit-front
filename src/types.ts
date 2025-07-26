@@ -17,6 +17,7 @@ export type Project = {
   userId: number; // owner
   createdAt?: string;
   updatedAt?: string;
+  privacy: boolean; // Required field for project visibility
   goals?: Goal[];
   participants?: Participant[];
   participationRequests?: ParticipationRequest[];

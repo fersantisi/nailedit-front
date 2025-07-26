@@ -11,6 +11,8 @@ import {
   CalendarToday as CalendarIcon,
   Star as StarIcon,
   Group as GroupIcon,
+  Lock as LockIcon,
+  Public as PublicIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { formatDate } from '../../utils/dateUtils';
@@ -19,11 +21,13 @@ interface HomeProjectCardProps {
   project: {
     id: number;
     name: string;
-    description: string;
+    description?: string;
     category?: string;
     dueDate?: string;
     userRole?: 'owner' | 'participant';
+    privacy: boolean;
   };
+  onClick: () => void;
 }
 
 export const HomeProjectCard = ({ project }: HomeProjectCardProps) => {
@@ -163,6 +167,37 @@ export const HomeProjectCard = ({ project }: HomeProjectCardProps) => {
               <Chip
                 icon={<CalendarIcon />}
                 label={formatDate(project.dueDate)}
+                size="small"
+                variant="outlined"
+                sx={{
+                  fontSize: '0.75rem',
+                  pl: 1,
+                  '& .MuiChip-icon': {
+                    ml: 0.5,
+                    fontSize: '1rem',
+                  },
+                }}
+              />
+            )}
+            {project.privacy ? (
+              <Chip
+                icon={<LockIcon />}
+                label="Private"
+                size="small"
+                variant="outlined"
+                sx={{
+                  fontSize: '0.75rem',
+                  pl: 1,
+                  '& .MuiChip-icon': {
+                    ml: 0.5,
+                    fontSize: '1rem',
+                  },
+                }}
+              />
+            ) : (
+              <Chip
+                icon={<PublicIcon />}
+                label="Public"
                 size="small"
                 variant="outlined"
                 sx={{

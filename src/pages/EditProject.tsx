@@ -33,6 +33,7 @@ export const EditProject = () => {
     projectCategory?: string;
     projectImage?: string;
     duedate?: string;
+    privacy?: string;
   }>({});
 
   const [projectData, setProjectData] = useState({
@@ -41,6 +42,7 @@ export const EditProject = () => {
     category: '',
     image: '',
     duedate: '',
+    privacy: 'false',
   });
 
   useEffect(() => {
@@ -99,6 +101,7 @@ export const EditProject = () => {
           category: data.category || '',
           image: data.image || '',
           duedate: data.dueDate?.substring(0, 10) || '',
+          privacy: data.privacy || 'false',
         });
       } catch (error) {
         console.error('Failed to fetch project:', error);
@@ -122,6 +125,7 @@ export const EditProject = () => {
     const category = formData.get('projectCategory') as string;
     const image = formData.get('projectImage') as string;
     const duedate = formData.get('duedate') as string;
+    const privacy = formData.get('privacy') as string;
 
     // Validate project name
     if (!name || name.trim().length === 0) {
@@ -161,6 +165,11 @@ export const EditProject = () => {
       }
     }
 
+    // Validate privacy (required)
+    if (!privacy) {
+      errors.privacy = 'Privacy setting is required';
+    }
+
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -180,6 +189,7 @@ export const EditProject = () => {
     const category = formData.get('projectCategory') as string;
     const image = formData.get('projectImage') as string;
     const duedate = formData.get('duedate') as string;
+    const privacy = formData.get('privacy') as string;
 
     try {
       const response = await fetch(
@@ -192,6 +202,7 @@ export const EditProject = () => {
             category: category.trim() || undefined,
             image: image.trim() || undefined,
             dueDate: duedate || undefined,
+            privacy: privacy === 'true',
           }),
           headers: {
             'Content-Type': 'application/json',
@@ -371,6 +382,50 @@ export const EditProject = () => {
                 InputLabelProps={{ shrink: true }}
               />
             </Box>
+            <Box sx={{ marginBottom: '20px' }}>
+              <Typography variant="subtitle1" sx={{ mb: 1 }}>
+                Project Privacy *
+              </Typography>
+              <Box sx={{ display: 'flex', gap: 2 }}>
+                <label
+                  style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+                >
+                  <input
+                    type="radio"
+                    name="privacy"
+                    value="false"
+                    defaultChecked={projectData.privacy === 'false'}
+                    required
+                    style={{ margin: 0 }}
+                  />
+                  <Typography>Public - Visible to community</Typography>
+                </label>
+                <label
+                  style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+                >
+                  <input
+                    type="radio"
+                    name="privacy"
+                    value="true"
+                    defaultChecked={projectData.privacy === 'true'}
+                    required
+                    style={{ margin: 0 }}
+                  />
+                  <Typography>
+                    Private - Only visible to you and participants
+                  </Typography>
+                </label>
+              </Box>
+              {formErrors.privacy && (
+                <Typography
+                  color="error"
+                  variant="caption"
+                  sx={{ mt: 1, display: 'block' }}
+                >
+                  {formErrors.privacy}
+                </Typography>
+              )}
+            </Box>
             <Box sx={{ display: 'flex', gap: 2 }}>
               <Button
                 type="button"
@@ -386,7 +441,7 @@ export const EditProject = () => {
                 color="primary"
                 fullWidth
               >
-                Save Changes
+                Update Project
               </Button>
             </Box>
           </Box>

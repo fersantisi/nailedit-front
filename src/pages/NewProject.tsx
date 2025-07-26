@@ -31,6 +31,7 @@ export const NewProject = () => {
     projectCategory?: string;
     projectImage?: string;
     duedate?: string;
+    privacy?: string;
   }>({});
 
   useEffect(() => {
@@ -89,6 +90,7 @@ export const NewProject = () => {
     const category = formData.get('projectCategory') as string;
     const image = formData.get('projectImage') as string;
     const duedate = formData.get('duedate') as string;
+    const privacy = formData.get('privacy') as string;
 
     // Validate project name
     if (!name || name.trim().length === 0) {
@@ -128,6 +130,11 @@ export const NewProject = () => {
       }
     }
 
+    // Validate privacy (required)
+    if (!privacy) {
+      errors.privacy = 'Privacy setting is required';
+    }
+
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -147,6 +154,7 @@ export const NewProject = () => {
     const category = formData.get('projectCategory') as string;
     const image = formData.get('projectImage') as string;
     const duedate = formData.get('duedate') as string;
+    const privacy = formData.get('privacy') as string;
 
     try {
       const response = await fetch(
@@ -159,6 +167,7 @@ export const NewProject = () => {
             category: category.trim() || undefined,
             image: image.trim() || undefined,
             dueDate: duedate || undefined,
+            privacy: privacy === 'true',
           }),
           headers: {
             'Content-Type': 'application/json',
@@ -337,6 +346,49 @@ export const NewProject = () => {
                 sx={{ marginTop: '10px' }}
                 slotProps={{ inputLabel: { shrink: true } }}
               />
+            </Box>
+
+            <Box sx={{ marginBottom: '20px' }}>
+              <Typography variant="subtitle1" sx={{ mb: 1 }}>
+                Project Privacy *
+              </Typography>
+              <Box sx={{ display: 'flex', gap: 2 }}>
+                <label
+                  style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+                >
+                  <input
+                    type="radio"
+                    name="privacy"
+                    value="false"
+                    required
+                    style={{ margin: 0 }}
+                  />
+                  <Typography>Public - Visible to community</Typography>
+                </label>
+                <label
+                  style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+                >
+                  <input
+                    type="radio"
+                    name="privacy"
+                    value="true"
+                    required
+                    style={{ margin: 0 }}
+                  />
+                  <Typography>
+                    Private - Only visible to you and participants
+                  </Typography>
+                </label>
+              </Box>
+              {formErrors.privacy && (
+                <Typography
+                  color="error"
+                  variant="caption"
+                  sx={{ mt: 1, display: 'block' }}
+                >
+                  {formErrors.privacy}
+                </Typography>
+              )}
             </Box>
 
             <Button type="submit" variant="contained" color="primary" fullWidth>

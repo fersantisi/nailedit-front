@@ -14,6 +14,8 @@ import {
   Add as AddIcon,
   Folder as ProjectIcon,
   CalendarToday as CalendarIcon,
+  Lock as LockIcon,
+  Public as PublicIcon,
 } from '@mui/icons-material';
 import { Navbar } from '../components/ui/navbar';
 import { useEffect, useState } from 'react';
@@ -462,6 +464,41 @@ export const ProjectList = () => {
                                 height: '24px',
                               }}
                             />
+                            {project.privacy ? (
+                              <Chip
+                                icon={<LockIcon />}
+                                label="Private"
+                                size="small"
+                                color="default"
+                                variant="outlined"
+                                sx={{
+                                  fontWeight: 'bold',
+                                  fontSize: '0.75rem',
+                                  height: '24px',
+                                  '& .MuiChip-icon': {
+                                    ml: 0.5,
+                                    fontSize: '0.9rem',
+                                  },
+                                }}
+                              />
+                            ) : (
+                              <Chip
+                                icon={<PublicIcon />}
+                                label="Public"
+                                size="small"
+                                color="info"
+                                variant="outlined"
+                                sx={{
+                                  fontWeight: 'bold',
+                                  fontSize: '0.75rem',
+                                  height: '24px',
+                                  '& .MuiChip-icon': {
+                                    ml: 0.5,
+                                    fontSize: '0.9rem',
+                                  },
+                                }}
+                              />
+                            )}
                           </Box>
                           {project.dueDate && (
                             <Chip
