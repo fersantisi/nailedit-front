@@ -35,9 +35,11 @@ import {
   AudioFile as AudioIcon,
   Folder as FolderIcon,
 } from '@mui/icons-material';
+import { ProjectPermissions } from '../../types';
 
 interface ProjectFilesSectionProps {
   projectId: string;
+  permissions: ProjectPermissions;
 }
 
 interface ProjectFile {
@@ -52,6 +54,7 @@ interface ProjectFile {
 
 export const ProjectFilesSection: React.FC<ProjectFilesSectionProps> = ({
   projectId,
+  permissions,
 }) => {
   const [files, setFiles] = useState<ProjectFile[]>([]);
   const [loading, setLoading] = useState(true);
@@ -362,15 +365,17 @@ export const ProjectFilesSection: React.FC<ProjectFilesSectionProps> = ({
                 style={{ display: 'none' }}
                 disabled={uploading}
               />
-              <Button
-                variant="contained"
-                color="primary"
-                startIcon={<UploadIcon />}
-                onClick={() => fileInputRef.current?.click()}
-                disabled={uploading}
-              >
-                Upload File
-              </Button>
+              {permissions.role !== 'viewer' && (
+                <Button
+                  variant="contained"
+                  color="primary"
+                  startIcon={<UploadIcon />}
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                >
+                  Upload File
+                </Button>
+              )}
             </Box>
           </Box>
 
@@ -468,15 +473,17 @@ export const ProjectFilesSection: React.FC<ProjectFilesSectionProps> = ({
                             <DownloadIcon />
                           </IconButton>
                         </Tooltip>
-                        <Tooltip title="Delete">
-                          <IconButton
-                            onClick={() => openDeleteDialog(file)}
-                            sx={{ color: '#f44336' }}
-                            size="small"
-                          >
-                            <DeleteIcon />
-                          </IconButton>
-                        </Tooltip>
+                        {permissions.role !== 'viewer' && (
+                          <Tooltip title="Delete">
+                            <IconButton
+                              onClick={() => openDeleteDialog(file)}
+                              sx={{ color: '#f44336' }}
+                              size="small"
+                            >
+                              <DeleteIcon />
+                            </IconButton>
+                          </Tooltip>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -512,9 +519,15 @@ export const ProjectFilesSection: React.FC<ProjectFilesSectionProps> = ({
           >
             Cancel
           </Button>
-          <Button onClick={handleDeleteFile} variant="contained" color="error">
-            Delete
-          </Button>
+          {permissions.role !== 'viewer' && (
+            <Button
+              onClick={handleDeleteFile}
+              variant="contained"
+              color="error"
+            >
+              Delete
+            </Button>
+          )}
         </DialogActions>
       </Dialog>
 

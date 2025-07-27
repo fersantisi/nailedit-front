@@ -15,13 +15,14 @@ import {
   CalendarToday as CalendarIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import { Goal, Task } from '../../types';
+import { Goal, Task, ProjectPermissions } from '../../types';
 import DeleteGoal from './DeleteGoal';
 import { TasksList } from './TasksList';
 
 interface GoalCardProps {
   goal: Goal;
   projectId: string;
+  permissions: ProjectPermissions;
   formatDate: (dateString: string) => string;
   getPriorityColor: (label: string) => string;
   onOpenNotes: (
@@ -35,6 +36,7 @@ interface GoalCardProps {
 export const GoalCard: React.FC<GoalCardProps> = ({
   goal,
   projectId,
+  permissions,
   formatDate,
   getPriorityColor,
   onOpenNotes,
@@ -98,7 +100,7 @@ export const GoalCard: React.FC<GoalCardProps> = ({
               <Checkbox
                 checked={completed}
                 onChange={handleToggle}
-                disabled={loading}
+                disabled={loading || permissions.role === 'viewer'}
                 size="small"
                 sx={{ p: 0.5 }}
               />
@@ -111,21 +113,27 @@ export const GoalCard: React.FC<GoalCardProps> = ({
               </Typography>
             </Box>
             <Box sx={{ display: 'flex', gap: 0.5 }}>
-              <IconButton
-                size="small"
-                onClick={() =>
-                  navigate(`/project/${projectId}/goal/${goal.id}/edit`)
-                }
-              >
-                <EditIcon fontSize="small" />
-              </IconButton>
-              <IconButton
-                size="small"
-                onClick={() => onOpenNotes('goal', goal.id, goal.name)}
-              >
-                <NoteIcon fontSize="small" />
-              </IconButton>
-              <DeleteGoal goalId={goal.id} projectId={projectId} />
+              {permissions.role !== 'viewer' && (
+                <>
+                  <IconButton
+                    size="small"
+                    onClick={() =>
+                      navigate(`/project/${projectId}/goal/${goal.id}/edit`)
+                    }
+                  >
+                    <EditIcon fontSize="small" />
+                  </IconButton>
+                  <IconButton
+                    size="small"
+                    onClick={() => onOpenNotes('goal', goal.id, goal.name)}
+                  >
+                    <NoteIcon fontSize="small" />
+                  </IconButton>
+                </>
+              )}
+              {permissions.role !== 'viewer' && (
+                <DeleteGoal goalId={goal.id} projectId={projectId} />
+              )}
             </Box>
           </Box>
 
@@ -157,6 +165,7 @@ export const GoalCard: React.FC<GoalCardProps> = ({
             tasks={goal.tasks || []}
             projectId={projectId}
             goalId={goal.id}
+            permissions={permissions}
             formatDate={formatDate}
             getPriorityColor={getPriorityColor}
             onOpenNotes={onOpenNotes}

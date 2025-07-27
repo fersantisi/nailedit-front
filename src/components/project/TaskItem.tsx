@@ -13,13 +13,14 @@ import {
   CalendarToday as CalendarIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import { Task } from '../../types';
+import { Task, ProjectPermissions } from '../../types';
 import DeleteTask from './DeleteTask';
 
 interface TaskItemProps {
   task: Task;
   projectId: string;
   goalId: number;
+  permissions: ProjectPermissions;
   formatDate: (dateString: string) => string;
   getPriorityColor: (label: string) => string;
   onOpenNotes: (
@@ -34,6 +35,7 @@ export const TaskItem: React.FC<TaskItemProps> = ({
   task,
   projectId,
   goalId,
+  permissions,
   formatDate,
   getPriorityColor,
   onOpenNotes,
@@ -86,7 +88,7 @@ export const TaskItem: React.FC<TaskItemProps> = ({
           <Checkbox
             checked={completed}
             onChange={handleToggle}
-            disabled={loading}
+            disabled={loading || permissions.role === 'viewer'}
             size="small"
             sx={{ p: 0.5 }}
           />
@@ -126,23 +128,33 @@ export const TaskItem: React.FC<TaskItemProps> = ({
           </Box>
         </Box>
         <Box sx={{ display: 'flex', gap: 0.5 }}>
-          <IconButton
-            size="small"
-            onClick={() =>
-              navigate(
-                `/project/${projectId}/goal/${goalId}/task/${task.id}/edit`
-              )
-            }
-          >
-            <EditIcon fontSize="small" />
-          </IconButton>
-          <IconButton
-            size="small"
-            onClick={() => onOpenNotes('task', task.id, task.name, goalId)}
-          >
-            <NoteIcon fontSize="small" />
-          </IconButton>
-          <DeleteTask goalId={goalId} projectId={projectId} taskId={task.id} />
+          {permissions.role !== 'viewer' && (
+            <>
+              <IconButton
+                size="small"
+                onClick={() =>
+                  navigate(
+                    `/project/${projectId}/goal/${goalId}/task/${task.id}/edit`
+                  )
+                }
+              >
+                <EditIcon fontSize="small" />
+              </IconButton>
+              <IconButton
+                size="small"
+                onClick={() => onOpenNotes('task', task.id, task.name, goalId)}
+              >
+                <NoteIcon fontSize="small" />
+              </IconButton>
+            </>
+          )}
+          {permissions.role !== 'viewer' && (
+            <DeleteTask
+              goalId={goalId}
+              projectId={projectId}
+              taskId={task.id}
+            />
+          )}
         </Box>
       </Box>
     </Card>

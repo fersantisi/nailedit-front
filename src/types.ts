@@ -106,7 +106,7 @@ export type ProjectPermissions = {
   projectId: number;
   userId: number;
   hasAccess: boolean;
-  role: 'owner' | 'participant' | 'none';
+  role: 'owner' | 'participant' | 'viewer' | 'none';
 };
 
 export type UserRole = 'owner' | 'participant' | 'none';

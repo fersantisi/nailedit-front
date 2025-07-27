@@ -2,13 +2,14 @@ import React from 'react';
 import { Box, Typography, Button } from '@mui/material';
 import { Add as AddIcon, Assignment as TaskIcon } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import { Task } from '../../types';
+import { Task, ProjectPermissions } from '../../types';
 import { TaskItem } from './TaskItem';
 
 interface TasksListProps {
   tasks: Task[];
   projectId: string;
   goalId: number;
+  permissions: ProjectPermissions;
   formatDate: (dateString: string) => string;
   getPriorityColor: (label: string) => string;
   onOpenNotes: (
@@ -23,6 +24,7 @@ export const TasksList: React.FC<TasksListProps> = ({
   tasks,
   projectId,
   goalId,
+  permissions,
   formatDate,
   getPriorityColor,
   onOpenNotes,
@@ -58,15 +60,17 @@ export const TasksList: React.FC<TasksListProps> = ({
           <TaskIcon fontSize="small" />
           Tasks ({tasks.length})
         </Typography>
-        <Button
-          size="small"
-          startIcon={<AddIcon />}
-          onClick={() =>
-            navigate(`/project/${projectId}/goal/${goalId}/task/create`)
-          }
-        >
-          Add Task
-        </Button>
+        {permissions.role !== 'viewer' && (
+          <Button
+            size="small"
+            startIcon={<AddIcon />}
+            onClick={() =>
+              navigate(`/project/${projectId}/goal/${goalId}/task/create`)
+            }
+          >
+            Add Task
+          </Button>
+        )}
       </Box>
 
       {sortedTasks.length > 0 ? (
@@ -77,6 +81,7 @@ export const TasksList: React.FC<TasksListProps> = ({
               task={task}
               projectId={projectId}
               goalId={goalId}
+              permissions={permissions}
               formatDate={formatDate}
               getPriorityColor={getPriorityColor}
               onOpenNotes={onOpenNotes}

@@ -141,9 +141,38 @@ export const Project = () => {
           );
           setPermissions(projectPermissions);
 
-          // If user doesn't have access, show error
-          if (!projectPermissions.hasAccess) {
-            setError("You don't have access to this project");
+          // Fetch project data first to check if it's public
+          const projectResponse = await fetch(
+            import.meta.env.VITE_SERVER_URL + '/project/' + id,
+            {
+              method: 'GET',
+              credentials: 'include',
+            }
+          );
+
+          if (projectResponse.ok) {
+            const projectInfo = await projectResponse.json();
+            console.log('Project data:', projectInfo);
+            setProjectData(projectInfo);
+
+            // Allow access if user has permissions OR if project is public
+            if (!projectPermissions.hasAccess && projectInfo.privacy) {
+              setError("You don't have access to this private project");
+              setLoading(false);
+              setPermissionsLoading(false);
+              return;
+            }
+
+            // For public projects without access, create view-only permissions
+            if (!projectPermissions.hasAccess && !projectInfo.privacy) {
+              setPermissions({
+                ...projectPermissions,
+                hasAccess: true,
+                role: 'viewer' as any,
+              });
+            }
+          } else {
+            setError('Failed to load project data');
             setLoading(false);
             setPermissionsLoading(false);
             return;
@@ -156,21 +185,6 @@ export const Project = () => {
           return;
         } finally {
           setPermissionsLoading(false);
-        }
-
-        // Fetch project data
-        const projectResponse = await fetch(
-          import.meta.env.VITE_SERVER_URL + '/project/' + id,
-          {
-            method: 'GET',
-            credentials: 'include',
-          }
-        );
-
-        if (projectResponse.ok) {
-          const projectInfo = await projectResponse.json();
-          console.log('Project data:', projectInfo);
-          setProjectData(projectInfo);
         }
 
         // Fetch goals and tasks
@@ -289,6 +303,7 @@ export const Project = () => {
           <GoalsSection
             goals={goals}
             projectId={id!}
+            permissions={permissions!}
             formatDate={formatDate}
             getPriorityColor={getPriorityColor}
             onOpenNotes={openNotesModal}
@@ -299,49 +314,52 @@ export const Project = () => {
           <ProjectStockSection projectId={id!} permissions={permissions} />
         )}
 
-        <ProjectFilesSection projectId={id!} />
+        <ProjectFilesSection projectId={id!} permissions={permissions!} />
 
         {/* Participant Management - Show based on permissions */}
-        {projectData && user && permissions && (
-          <Box
-            sx={{
-              display: 'flex',
-              gap: 2,
-              flexWrap: 'wrap',
-              maxWidth: '1200px',
-              mx: 'auto',
-              width: '100%',
-            }}
-          >
-            {/* Team Members - Show to all project members */}
-            <Box sx={{ flex: 1, minWidth: '300px', maxWidth: '600px' }}>
-              <TeamMembersSection
-                project={projectData}
-                currentUser={user}
-                permissions={permissions}
-                onParticipantRemoved={() => {
-                  // Refresh project data to update participant count
-                  window.location.reload();
-                }}
-              />
-            </Box>
-
-            {/* Pending Requests - Only show to owners */}
-            {permissions.role === 'owner' && (
+        {projectData &&
+          user &&
+          permissions &&
+          permissions.role !== 'viewer' && (
+            <Box
+              sx={{
+                display: 'flex',
+                gap: 2,
+                flexWrap: 'wrap',
+                maxWidth: '1200px',
+                mx: 'auto',
+                width: '100%',
+              }}
+            >
+              {/* Team Members - Show to all project members */}
               <Box sx={{ flex: 1, minWidth: '300px', maxWidth: '600px' }}>
-                <PendingRequestsSection
+                <TeamMembersSection
                   project={projectData}
                   currentUser={user}
                   permissions={permissions}
-                  onRequestProcessed={() => {
+                  onParticipantRemoved={() => {
                     // Refresh project data to update participant count
                     window.location.reload();
                   }}
                 />
               </Box>
-            )}
-          </Box>
-        )}
+
+              {/* Pending Requests - Only show to owners */}
+              {permissions.role === 'owner' && (
+                <Box sx={{ flex: 1, minWidth: '300px', maxWidth: '600px' }}>
+                  <PendingRequestsSection
+                    project={projectData}
+                    currentUser={user}
+                    permissions={permissions}
+                    onRequestProcessed={() => {
+                      // Refresh project data to update participant count
+                      window.location.reload();
+                    }}
+                  />
+                </Box>
+              )}
+            </Box>
+          )}
       </Box>
 
       <NotesModal

@@ -4,6 +4,7 @@ import {
   Edit as EditIcon,
   CalendarToday as CalendarIcon,
   Note as NoteIcon,
+  Visibility as ViewIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import DeleteProject from './DeleteProject';
@@ -101,6 +102,15 @@ export const ProjectHeader: React.FC<ProjectHeaderProps> = ({
             color={getCategoryColor(projectData.category)}
             sx={{ fontWeight: 'bold', flexShrink: 0 }}
           />
+          {permissions.role === 'viewer' && (
+            <Chip
+              icon={<ViewIcon />}
+              label="View Only"
+              color="info"
+              variant="outlined"
+              sx={{ fontWeight: 'bold', flexShrink: 0 }}
+            />
+          )}
         </Box>
 
         <Typography
@@ -127,7 +137,7 @@ export const ProjectHeader: React.FC<ProjectHeaderProps> = ({
       </Box>
 
       <Box sx={{ display: 'flex', gap: 1, flexShrink: 0, ml: 2 }}>
-        {onOpenProjectNotes && (
+        {onOpenProjectNotes && permissions.role !== 'viewer' && (
           <Button
             variant="outlined"
             startIcon={<NoteIcon />}
@@ -147,7 +157,9 @@ export const ProjectHeader: React.FC<ProjectHeaderProps> = ({
             Edit
           </Button>
         )}
-        <DeleteProject projectId={projectId} permissions={permissions} />
+        {permissions.role !== 'viewer' && (
+          <DeleteProject projectId={projectId} permissions={permissions} />
+        )}
       </Box>
     </Box>
   );

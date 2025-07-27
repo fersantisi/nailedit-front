@@ -89,6 +89,7 @@ export const ProjectStockSection: React.FC<ProjectStockSectionProps> = ({
 
   // Check if current user is the project owner
   const isOwner = permissions.role === 'owner';
+  const isViewer = permissions.role === 'viewer';
 
   useEffect(() => {
     fetchAllStockItems();
@@ -491,18 +492,20 @@ export const ProjectStockSection: React.FC<ProjectStockSectionProps> = ({
                   Add Reservation
                 </Button>
               )}
-              <Button
-                variant="outlined"
-                onClick={async () => {
-                  console.log('Manual refresh triggered');
-                  await fetchProjectReservedStock();
-                  await fetchAllStockItems();
-                  showSnackbar('Data refreshed', 'success');
-                }}
-                sx={{ color: '#e2e2e2', borderColor: '#79799a' }}
-              >
-                Refresh
-              </Button>
+              {!isViewer && (
+                <Button
+                  variant="outlined"
+                  onClick={async () => {
+                    console.log('Manual refresh triggered');
+                    await fetchProjectReservedStock();
+                    await fetchAllStockItems();
+                    showSnackbar('Data refreshed', 'success');
+                  }}
+                  sx={{ color: '#e2e2e2', borderColor: '#79799a' }}
+                >
+                  Refresh
+                </Button>
+              )}
             </Box>
           </Box>
 
@@ -567,13 +570,15 @@ export const ProjectStockSection: React.FC<ProjectStockSectionProps> = ({
                               <EditIcon />
                             </IconButton>
                           )}
-                          <IconButton
-                            onClick={() => openUseDialog(reservation)}
-                            sx={{ color: '#4caf50' }}
-                            title="Use Reserved Stock"
-                          >
-                            <UseIcon />
-                          </IconButton>
+                          {!isViewer && (
+                            <IconButton
+                              onClick={() => openUseDialog(reservation)}
+                              sx={{ color: '#4caf50' }}
+                              title="Use Reserved Stock"
+                            >
+                              <UseIcon />
+                            </IconButton>
+                          )}
                           {isOwner && (
                             <IconButton
                               onClick={() =>

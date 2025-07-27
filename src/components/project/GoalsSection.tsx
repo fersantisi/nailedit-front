@@ -2,12 +2,13 @@ import React from 'react';
 import { Box, Typography, Button, Card } from '@mui/material';
 import { Add as AddIcon, Flag as GoalIcon } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import { Goal } from '../../types';
+import { Goal, ProjectPermissions } from '../../types';
 import { GoalCard } from './GoalCard';
 
 interface GoalsSectionProps {
   goals: Goal[];
   projectId: string;
+  permissions: ProjectPermissions;
   formatDate: (dateString: string) => string;
   getPriorityColor: (label: string) => string;
   onOpenNotes: (
@@ -21,6 +22,7 @@ interface GoalsSectionProps {
 export const GoalsSection: React.FC<GoalsSectionProps> = ({
   goals,
   projectId,
+  permissions,
   formatDate,
   getPriorityColor,
   onOpenNotes,
@@ -45,13 +47,15 @@ export const GoalsSection: React.FC<GoalsSectionProps> = ({
           <GoalIcon color="primary" />
           Goals
         </Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => navigate(`/project/${projectId}/goal/create`)}
-        >
-          Add Goal
-        </Button>
+        {permissions.role !== 'viewer' && (
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => navigate(`/project/${projectId}/goal/create`)}
+          >
+            Add Goal
+          </Button>
+        )}
       </Box>
 
       {goals.length > 0 ? (
@@ -68,6 +72,7 @@ export const GoalsSection: React.FC<GoalsSectionProps> = ({
               key={goal.id}
               goal={goal}
               projectId={projectId}
+              permissions={permissions}
               formatDate={formatDate}
               getPriorityColor={getPriorityColor}
               onOpenNotes={onOpenNotes}
