@@ -19,14 +19,20 @@ import {
   Lock as LockIcon,
 } from '@mui/icons-material';
 import { Navbar } from '../components/ui/navbar';
+import { NotificationSettings } from '../components/profile/NotificationSettings';
+import { notificationApi } from '../utils/notificationApi';
 import { useEffect, useState } from 'react';
-import { User } from '../types';
+import {
+  User,
+  NotificationSettings as NotificationSettingsType,
+} from '../types';
 import { useNavigate } from 'react-router-dom';
 
 interface ProfileData {
   id: number;
   username: string;
   email: string;
+  notificationSettings?: NotificationSettingsType;
 }
 
 interface PasswordChangeData {
@@ -49,6 +55,18 @@ export const Profile = () => {
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null);
+  const [notificationSettings, setNotificationSettings] =
+    useState<NotificationSettingsType>({
+      emailNotificationsEnabled: false,
+      dueDateThreshold: 3,
+    });
+  const [notificationLoading, setNotificationLoading] = useState(false);
+  const [notificationError, setNotificationError] = useState<string | null>(
+    null
+  );
+  const [notificationSuccess, setNotificationSuccess] = useState<string | null>(
+    null
+  );
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -89,6 +107,11 @@ export const Profile = () => {
           const userData = await profileResponse.json();
           setUser(userData);
           setProfileData(userData);
+
+          // Set notification settings from user data or use defaults
+          if (userData.notificationSettings) {
+            setNotificationSettings(userData.notificationSettings);
+          }
         } else {
           setUser(null);
           navigate('/login');
@@ -169,6 +192,37 @@ export const Profile = () => {
     });
     setPasswordError(null);
     setPasswordSuccess(null);
+  };
+
+  const handleNotificationSettingsUpdate = async () => {
+    try {
+      setNotificationLoading(true);
+      setNotificationError(null);
+      setNotificationSuccess(null);
+
+      const updatedSettings =
+        await notificationApi.updateNotificationSettings(notificationSettings);
+
+      setNotificationSuccess('Notification settings updated successfully!');
+      setNotificationSettings(updatedSettings);
+
+      // Update the profile data with new settings
+      if (profileData) {
+        setProfileData({
+          ...profileData,
+          notificationSettings: updatedSettings,
+        });
+      }
+    } catch (error) {
+      console.error('Error updating notification settings:', error);
+      setNotificationError(
+        error instanceof Error
+          ? error.message
+          : 'An error occurred while updating notification settings'
+      );
+    } finally {
+      setNotificationLoading(false);
+    }
   };
 
   if (loading) {
@@ -289,6 +343,18 @@ export const Profile = () => {
               </Typography>
             </Box>
           </Box>
+
+          <Divider sx={{ my: 3 }} />
+
+          {/* Notification Settings */}
+          <NotificationSettings
+            settings={notificationSettings}
+            onSettingsChange={setNotificationSettings}
+            onSave={handleNotificationSettingsUpdate}
+            loading={notificationLoading}
+            error={notificationError}
+            success={notificationSuccess}
+          />
 
           <Divider sx={{ my: 3 }} />
 

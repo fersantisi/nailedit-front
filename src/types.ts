@@ -5,6 +5,12 @@ export type User = {
   role?: string;
   createdAt?: string;
   isActive?: boolean;
+  notificationSettings?: NotificationSettings;
+};
+
+export type NotificationSettings = {
+  emailNotificationsEnabled: boolean;
+  dueDateThreshold: number; // Days before due date to send notification
 };
 
 export type Project = {
