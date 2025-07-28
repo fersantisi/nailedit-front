@@ -1,7 +1,39 @@
 export const formatDate = (dateString: string) => {
   if (!dateString) return 'No due date';
 
-  // Parse the date string as-is without timezone conversion
+  // Handle ISO date strings
+  if (dateString.includes('T')) {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return 'Invalid date';
+
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const diffTime = date.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    const formattedDate = date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
+
+    if (diffDays < 0) {
+      return `${formattedDate} (Overdue)`;
+    } else if (diffDays === 0) {
+      return `${formattedDate} (Today)`;
+    } else if (diffDays === 1) {
+      return `${formattedDate} (Tomorrow)`;
+    } else if (diffDays <= 7) {
+      return `${formattedDate} (${diffDays} days)`;
+    } else {
+      return formattedDate;
+    }
+  }
+
+  // Handle legacy date format (YYYY-MM-DD)
   const [year, month, day] = dateString.split('-').map(Number);
   const date = new Date(year, month - 1, day); // month is 0-indexed in JS Date
 
@@ -29,6 +61,25 @@ export const formatDate = (dateString: string) => {
     return `${formattedDate} (${diffDays} days)`;
   } else {
     return formattedDate;
+  }
+};
+
+export const formatInvitationDate = (dateString: string) => {
+  if (!dateString) return 'No date';
+  
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return 'Invalid date';
+    
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  } catch (error) {
+    return 'Invalid date';
   }
 };
 

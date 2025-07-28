@@ -132,3 +132,21 @@ export type ShoppingListResponse = {
   items: ShoppingListItem[];
   total: number;
 };
+
+export type ProjectInvitation = {
+  id: number;
+  projectId: number;
+  fromUser: number;
+  toUser: number;
+  status: 'pending' | 'accepted' | 'rejected';
+  created_at: string;
+  updated_at: string;
+  project: Project;
+  fromUserData: User;
+  toUserData: User;
+};
+
+export type InvitationResponse = {
+  invites: ProjectInvitation[];
+  total: number;
+};

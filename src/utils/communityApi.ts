@@ -4,6 +4,7 @@ import {
   Participant,
   CommunitySearchResponse,
   ProjectPermissions,
+  ProjectInvitation,
 } from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_SERVER_URL;
@@ -338,6 +339,30 @@ export const participantApi = {
 
     if (!response.ok) {
       throw new Error('Failed to fetch participation requests');
+    }
+
+    return response.json();
+  },
+
+  async getProjectInvites(projectId: number): Promise<ProjectInvitation[]> {
+    const response = await fetch(
+      `${API_BASE_URL}/community/projects/${projectId}/invites`,
+      {
+        method: 'GET',
+        ...defaultFetchOptions,
+      }
+    );
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(
+        'Failed to fetch project invites:',
+        response.status,
+        errorText
+      );
+      throw new Error(
+        `Failed to fetch project invites: ${response.status} ${errorText}`
+      );
     }
 
     return response.json();

@@ -23,6 +23,7 @@ import { Gantt } from './pages/Gantt';
 import { StockPage } from './pages/Stock';
 import { Community } from './pages/Community';
 import { ShoppingListPage } from './pages/ShoppingList';
+import { Invitations } from './pages/Invitations';
 
 const theme = createTheme({
   palette: {
@@ -123,6 +124,7 @@ function App() {
               </AdminRoute>
             }
           />
+          <Route path="/invitations" element={<Invitations />} />
         </Routes>
       </ThemeProvider>
     </Box>

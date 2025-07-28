@@ -25,6 +25,7 @@ import {
   Delete as DeleteIcon,
   Group as GroupIcon,
   Star as StarIcon,
+  PersonAdd as InviteIcon,
 } from '@mui/icons-material';
 import { Participant, User, Project, ProjectPermissions } from '../../types';
 import { participantApi } from '../../utils/communityApi';
@@ -34,6 +35,7 @@ interface TeamMembersSectionProps {
   currentUser: User;
   permissions: ProjectPermissions;
   onParticipantRemoved?: () => void;
+  onInvite?: () => void;
 }
 
 export const TeamMembersSection: React.FC<TeamMembersSectionProps> = ({
@@ -41,6 +43,7 @@ export const TeamMembersSection: React.FC<TeamMembersSectionProps> = ({
   currentUser,
   permissions,
   onParticipantRemoved,
+  onInvite,
 }) => {
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [loading, setLoading] = useState(true);
@@ -269,12 +272,32 @@ export const TeamMembersSection: React.FC<TeamMembersSectionProps> = ({
           >
             Team Members
           </Typography>
-          <Chip
-            label={participants.length + 1}
-            color="primary"
-            size="small"
-            sx={{ flexShrink: 0 }}
-          />
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Chip
+              label={participants.length + 1}
+              color="primary"
+              size="small"
+              sx={{ flexShrink: 0 }}
+            />
+            {permissions.role === 'owner' && onInvite && (
+              <Button
+                variant="outlined"
+                startIcon={<InviteIcon />}
+                onClick={onInvite}
+                size="small"
+                sx={{ 
+                  color: '#e2e2e2', 
+                  borderColor: '#79799a',
+                  '&:hover': {
+                    borderColor: '#e2e2e2',
+                    backgroundColor: 'rgba(255, 255, 255, 0.08)'
+                  }
+                }}
+              >
+                Invite
+              </Button>
+            )}
+          </Box>
         </Box>
 
         {error && (
