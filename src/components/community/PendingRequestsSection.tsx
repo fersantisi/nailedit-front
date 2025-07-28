@@ -33,6 +33,7 @@ import {
   User,
   Project,
   ProjectPermissions,
+  ProjectInvitation,
 } from '../../types';
 import { participantApi } from '../../utils/communityApi';
 
@@ -50,6 +51,7 @@ export const PendingRequestsSection: React.FC<PendingRequestsSectionProps> = ({
   onRequestProcessed,
 }) => {
   const [requests, setRequests] = useState<ParticipationRequest[]>([]);
+  const [invites, setInvites] = useState<ProjectInvitation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actionDialogOpen, setActionDialogOpen] = useState(false);
@@ -71,11 +73,28 @@ export const PendingRequestsSection: React.FC<PendingRequestsSectionProps> = ({
     try {
       setLoading(true);
       setError(null);
-      const requestsData = await participantApi.getParticipationRequests(
-        project.id
-      );
 
-      // If user data is missing, fetch it separately
+      // Fetch both participation requests and project invites
+      const [requestsData, invitesData] = await Promise.all([
+        participantApi.getParticipationRequests(project.id),
+        participantApi.getProjectInvites(project.id),
+      ]);
+
+      // Handle different response structures for invites
+      let processedInvites = invitesData;
+      if (invitesData && typeof invitesData === 'object' && !Array.isArray(invitesData)) {
+        // If it's an object, check if it has an 'invites' property
+        if (invitesData.invites) {
+          processedInvites = invitesData.invites;
+        } else if (invitesData.data) {
+          processedInvites = invitesData.data;
+        } else {
+          // If it's an empty object, treat as empty array
+          processedInvites = [];
+        }
+      }
+
+      // If user data is missing, fetch it separately for requests
       const requestsWithUserData = await Promise.all(
         requestsData.map(async (request) => {
           if (!request.user || !request.user.username) {
@@ -117,6 +136,7 @@ export const PendingRequestsSection: React.FC<PendingRequestsSectionProps> = ({
       );
 
       setRequests(requestsWithUserData);
+      setInvites(processedInvites);
     } catch (error) {
       console.error('Error fetching participation requests:', error);
       setError('Failed to load participation requests');
@@ -203,11 +223,15 @@ export const PendingRequestsSection: React.FC<PendingRequestsSectionProps> = ({
             variant="h6"
             sx={{ color: '#e2e2e2', fontWeight: 'bold', flex: 1 }}
           >
-            Pending Requests
+            Pending Requests & Invites
           </Typography>
           <Chip
-            label={requests.length}
-            color={requests.length > 0 ? 'warning' : 'default'}
+            label={(requests?.length || 0) + (invites?.length || 0)}
+            color={
+              (requests?.length || 0) + (invites?.length || 0) > 0
+                ? 'warning'
+                : 'default'
+            }
             size="small"
             sx={{ flexShrink: 0 }}
           />
@@ -219,95 +243,181 @@ export const PendingRequestsSection: React.FC<PendingRequestsSectionProps> = ({
           </Alert>
         )}
 
-        {requests.length === 0 ? (
+        {(requests?.length || 0) === 0 && (invites?.length || 0) === 0 ? (
           <Box sx={{ textAlign: 'center', py: 4 }}>
             <PendingIcon sx={{ fontSize: 48, color: '#79799a', mb: 2 }} />
             <Typography color="text.secondary">
-              No pending requests at the moment
+              No pending requests or invites at the moment
             </Typography>
           </Box>
         ) : (
           <List sx={{ width: '100%' }}>
-            {requests.map((request, index) => (
-              <React.Fragment key={request.id}>
-                <ListItem
-                  sx={{
-                    backgroundColor: '#2e2e2e',
-                    borderRadius: 1,
-                    mb: 1,
-                    border: '1px solid #f57c00',
-                    px: 2,
-                    py: 1,
-                  }}
+            {/* Participation Requests */}
+            {(requests?.length || 0) > 0 && (
+              <>
+                <Typography
+                  variant="subtitle2"
+                  sx={{ mb: 2, color: '#e2e2e2' }}
                 >
-                  <ListItemAvatar>
-                    <Avatar sx={{ backgroundColor: '#f57c00' }}>
-                      <PersonIcon />
-                    </Avatar>
-                  </ListItemAvatar>
-                  <ListItemText
-                    primary={
-                      <Box
-                        sx={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 1,
-                          flexWrap: 'wrap',
-                        }}
-                      >
-                        <Typography
-                          variant="body1"
-                          sx={{
-                            color: '#e2e2e2',
-                            minWidth: 0,
-                            wordBreak: 'break-word',
-                          }}
-                        >
-                          {request.user?.username || 'Unknown User'}
-                        </Typography>
-                        <Chip
-                          label="Pending"
-                          color="warning"
-                          size="small"
-                          sx={{ backgroundColor: '#f57c00', flexShrink: 0 }}
-                        />
+                  Participation Requests ({(requests?.length || 0)})
+                </Typography>
+                {requests.map((request, index) => (
+                  <React.Fragment key={`request-${request.id}`}>
+                    <ListItem
+                      sx={{
+                        backgroundColor: '#2e2e2e',
+                        borderRadius: 1,
+                        mb: 1,
+                        border: '1px solid #f57c00',
+                        px: 2,
+                        py: 1,
+                      }}
+                    >
+                      <ListItemAvatar>
+                        <Avatar sx={{ backgroundColor: '#f57c00' }}>
+                          <PersonIcon />
+                        </Avatar>
+                      </ListItemAvatar>
+                      <ListItemText
+                        primary={
+                          <Box
+                            sx={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 1,
+                              flexWrap: 'wrap',
+                            }}
+                          >
+                            <Typography
+                              variant="body1"
+                              sx={{
+                                color: '#e2e2e2',
+                                minWidth: 0,
+                                wordBreak: 'break-word',
+                              }}
+                            >
+                              {request.user?.username || 'Unknown User'}
+                            </Typography>
+                            <Chip
+                              label="Pending"
+                              color="warning"
+                              size="small"
+                              sx={{ backgroundColor: '#f57c00', flexShrink: 0 }}
+                            />
+                          </Box>
+                        }
+                      />
+                      <Box sx={{ display: 'flex', gap: 1, ml: 1 }}>
+                        <Tooltip title="Accept Request">
+                          <IconButton
+                            color="success"
+                            onClick={() => handleActionClick(request, 'accept')}
+                            size="small"
+                            sx={{
+                              backgroundColor: '#4caf50',
+                              color: 'white',
+                              '&:hover': { backgroundColor: '#45a049' },
+                            }}
+                          >
+                            <CheckIcon />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Reject Request">
+                          <IconButton
+                            color="error"
+                            onClick={() => handleActionClick(request, 'reject')}
+                            size="small"
+                            sx={{
+                              backgroundColor: '#f44336',
+                              color: 'white',
+                              '&:hover': { backgroundColor: '#da190b' },
+                            }}
+                          >
+                            <CloseIcon />
+                          </IconButton>
+                        </Tooltip>
                       </Box>
-                    }
-                  />
-                  <Box sx={{ display: 'flex', gap: 1, ml: 1 }}>
-                    <Tooltip title="Accept Request">
-                      <IconButton
-                        color="success"
-                        onClick={() => handleActionClick(request, 'accept')}
-                        size="small"
-                        sx={{
-                          backgroundColor: '#4caf50',
-                          color: 'white',
-                          '&:hover': { backgroundColor: '#45a049' },
-                        }}
-                      >
-                        <CheckIcon />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Reject Request">
-                      <IconButton
-                        color="error"
-                        onClick={() => handleActionClick(request, 'reject')}
-                        size="small"
-                        sx={{
-                          backgroundColor: '#f44336',
-                          color: 'white',
-                          '&:hover': { backgroundColor: '#da190b' },
-                        }}
-                      >
-                        <CloseIcon />
-                      </IconButton>
-                    </Tooltip>
-                  </Box>
-                </ListItem>
-                {index < requests.length - 1 && <Divider sx={{ my: 1 }} />}
-              </React.Fragment>
-            ))}
+                    </ListItem>
+                    {index < requests.length - 1 && <Divider sx={{ my: 1 }} />}
+                  </React.Fragment>
+                ))}
+              </>
+            )}
+
+            {/* Project Invites */}
+            {(invites?.length || 0) > 0 && (
+              <>
+                {(requests?.length || 0) > 0 && <Divider sx={{ my: 2 }} />}
+                <Typography
+                  variant="subtitle2"
+                  sx={{ mb: 2, color: '#e2e2e2' }}
+                >
+                  Sent Invitations ({(invites?.length || 0)})
+                </Typography>
+                {invites.map((invite, index) => (
+                  <React.Fragment key={`invite-${invite.id}`}>
+                    <ListItem
+                      sx={{
+                        backgroundColor: '#2e2e2e',
+                        borderRadius: 1,
+                        mb: 1,
+                        border: '1px solid #1976d2',
+                        px: 2,
+                        py: 1,
+                      }}
+                    >
+                      <ListItemAvatar>
+                        <Avatar sx={{ backgroundColor: '#1976d2' }}>
+                          <PersonIcon />
+                        </Avatar>
+                      </ListItemAvatar>
+                      <ListItemText
+                        primary={
+                          <Box
+                            sx={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 1,
+                              flexWrap: 'wrap',
+                            }}
+                          >
+                            <Typography
+                              variant="body1"
+                              sx={{
+                                color: '#e2e2e2',
+                                minWidth: 0,
+                                wordBreak: 'break-word',
+                              }}
+                            >
+                              {invite.toUserData?.username || 'Unknown User'}
+                            </Typography>
+                            <Chip
+                              label={invite.status}
+                              color={
+                                invite.status === 'accepted'
+                                  ? 'success'
+                                  : invite.status === 'rejected'
+                                    ? 'error'
+                                    : 'warning'
+                              }
+                              size="small"
+                              sx={{ flexShrink: 0 }}
+                            />
+                          </Box>
+                        }
+                        secondary={
+                          <Typography variant="caption" color="text.secondary">
+                            Sent on{' '}
+                            {new Date(invite.created_at).toLocaleDateString()}
+                          </Typography>
+                        }
+                      />
+                    </ListItem>
+                    {index < invites.length - 1 && <Divider sx={{ my: 1 }} />}
+                  </React.Fragment>
+                ))}
+              </>
+            )}
           </List>
         )}
       </Paper>
