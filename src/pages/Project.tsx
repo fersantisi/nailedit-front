@@ -307,7 +307,6 @@ export const Project = () => {
             permissions={permissions}
             formatDate={formatDate}
             onOpenProjectNotes={openProjectNotesModal}
-            onInvite={handleInviteClick}
           />
         )}
 
@@ -353,6 +352,7 @@ export const Project = () => {
                     // Refresh project data to update participant count
                     window.location.reload();
                   }}
+                  onInvite={handleInviteClick}
                 />
               </Box>
 

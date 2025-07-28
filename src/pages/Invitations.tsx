@@ -8,6 +8,7 @@ import {
 } from '@mui/material';
 import { Navbar } from '../components/ui/navbar';
 import { ReceivedInvitationsSection } from '../components/invitations/ReceivedInvitationsSection';
+import { SentInvitationsSection } from '../components/invitations/SentInvitationsSection';
 import { useEffect, useState } from 'react';
 import { User } from '../types';
 import { useNavigate } from 'react-router-dom';
@@ -119,12 +120,19 @@ export const Invitations = () => {
             Project Invitations
           </Typography>
           <Typography variant="body1" color="text.secondary">
-            Manage your received project invitations
+            Manage your project invitations
           </Typography>
         </Box>
 
-        {/* Invitations Section */}
-        <ReceivedInvitationsSection />
+        {/* Received Invitations Section */}
+        <Box sx={{ mb: 4 }}>
+          <ReceivedInvitationsSection />
+        </Box>
+
+        {/* Sent Invitations Section */}
+        <Box sx={{ mb: 4 }}>
+          <SentInvitationsSection />
+        </Box>
       </Container>
     </>
   );

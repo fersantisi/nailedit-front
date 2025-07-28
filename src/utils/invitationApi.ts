@@ -18,10 +18,16 @@ export const invitationApi = {
     });
 
     if (!response.ok) {
-      throw new Error('Failed to fetch received invitations');
+      const errorText = await response.text();
+      console.error('Failed to fetch invitations:', response.status, errorText);
+      throw new Error(
+        `Failed to fetch received invitations: ${response.status} ${errorText}`
+      );
     }
 
-    return response.json();
+    const data = await response.json();
+    console.log('Raw invitation response:', data);
+    return data;
   },
 
   // Get all invitations sent by the current user
@@ -32,23 +38,33 @@ export const invitationApi = {
     });
 
     if (!response.ok) {
-      throw new Error('Failed to fetch sent invitations');
+      const errorText = await response.text();
+      console.error(
+        'Failed to fetch sent invitations:',
+        response.status,
+        errorText
+      );
+      throw new Error(
+        `Failed to fetch sent invitations: ${response.status} ${errorText}`
+      );
     }
 
-    return response.json();
+    const data = await response.json();
+    console.log('Raw sent invitations response:', data);
+    return data;
   },
 
   // Send invitation to a user for a project
   async sendInvitation(
     projectId: number,
-    toUserId: number
+    username: string
   ): Promise<ProjectInvitation> {
     const response = await fetch(
       `${API_BASE_URL}/community/projects/${projectId}/invite`,
       {
         method: 'POST',
         ...defaultFetchOptions,
-        body: JSON.stringify({ toUser: toUserId }),
+        body: JSON.stringify({ toUser: username }),
       }
     );
 
@@ -65,7 +81,7 @@ export const invitationApi = {
     const response = await fetch(
       `${API_BASE_URL}/community/invites/${inviteId}/accept`,
       {
-        method: 'PUT',
+        method: 'POST',
         ...defaultFetchOptions,
       }
     );
@@ -80,7 +96,7 @@ export const invitationApi = {
     const response = await fetch(
       `${API_BASE_URL}/community/invites/${inviteId}/reject`,
       {
-        method: 'PUT',
+        method: 'POST',
         ...defaultFetchOptions,
       }
     );
@@ -92,11 +108,13 @@ export const invitationApi = {
 
   // Delete an invitation
   async deleteInvitation(inviteId: number): Promise<void> {
-    const response = await fetch(`${API_BASE_URL}/community/invites`, {
-      method: 'DELETE',
-      ...defaultFetchOptions,
-      body: JSON.stringify({ inviteID: inviteId }),
-    });
+    const response = await fetch(
+      `${API_BASE_URL}/community/invites/${inviteId}`,
+      {
+        method: 'DELETE',
+        ...defaultFetchOptions,
+      }
+    );
 
     if (!response.ok) {
       throw new Error('Failed to delete invitation');

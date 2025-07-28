@@ -22,18 +22,24 @@ import {
 import {
   Check as AcceptIcon,
   Close as RejectIcon,
+  Delete as DeleteIcon,
   Person as PersonIcon,
+  Folder as ProjectIcon,
+  Send as SendIcon,
 } from '@mui/icons-material';
 import { ProjectInvitation } from '../../types';
 import { invitationApi } from '../../utils/invitationApi';
 import { formatInvitationDate } from '../../utils/dateUtils';
 import { useNavigate } from 'react-router-dom';
 
-export const ReceivedInvitationsSection: React.FC = () => {
+export const SentInvitationsSection: React.FC = () => {
   const [invitations, setInvitations] = useState<ProjectInvitation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [processing, setProcessing] = useState<number | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [invitationToDelete, setInvitationToDelete] =
+    useState<ProjectInvitation | null>(null);
   const [componentError, setComponentError] = useState<string | null>(null);
   const navigate = useNavigate();
 
@@ -42,7 +48,7 @@ export const ReceivedInvitationsSection: React.FC = () => {
       fetchInvitations();
     } catch (err) {
       console.error('Component error:', err);
-      setComponentError('Failed to initialize invitations component');
+      setComponentError('Failed to initialize sent invitations component');
       setLoading(false);
     }
   }, []);
@@ -52,8 +58,8 @@ export const ReceivedInvitationsSection: React.FC = () => {
       setLoading(true);
       setError(null);
 
-      const response = await invitationApi.getReceivedInvitations();
-      console.log('Received invitations response:', response);
+      const response = await invitationApi.getSentInvitations();
+      console.log('Sent invitations response:', response);
 
       // Handle different response structures
       if (response && response.invites) {
@@ -65,49 +71,50 @@ export const ReceivedInvitationsSection: React.FC = () => {
         setInvitations([]);
       }
     } catch (error) {
-      console.error('Error fetching invitations:', error);
-      setError('Failed to load invitations');
+      console.error('Error fetching sent invitations:', error);
+      setError('Failed to load sent invitations');
       setInvitations([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleAcceptInvitation = async (invitation: ProjectInvitation) => {
+  const handleDeleteInvitation = async () => {
+    if (!invitationToDelete) return;
+
     try {
-      setProcessing(invitation.id);
+      setProcessing(invitationToDelete.id);
       setError(null);
 
-      await invitationApi.acceptInvitation(invitation.id);
+      await invitationApi.deleteInvitation(invitationToDelete.id);
 
       // Remove the invitation from the list
-      setInvitations((prev) => prev.filter((inv) => inv.id !== invitation.id));
+      setInvitations((prev) =>
+        prev.filter((inv) => inv.id !== invitationToDelete.id)
+      );
+      setDeleteDialogOpen(false);
+      setInvitationToDelete(null);
     } catch (error) {
-      console.error('Error accepting invitation:', error);
-      setError('Failed to accept invitation');
+      console.error('Error deleting invitation:', error);
+      setError('Failed to delete invitation');
     } finally {
       setProcessing(null);
     }
   };
 
-  const handleRejectInvitation = async (invitation: ProjectInvitation) => {
-    try {
-      setProcessing(invitation.id);
-      setError(null);
-
-      await invitationApi.rejectInvitation(invitation.id);
-
-      // Remove the invitation from the list
-      setInvitations((prev) => prev.filter((inv) => inv.id !== invitation.id));
-    } catch (error) {
-      console.error('Error rejecting invitation:', error);
-      setError('Failed to reject invitation');
-    } finally {
-      setProcessing(null);
-    }
+  const openDeleteDialog = (invitation: ProjectInvitation) => {
+    setInvitationToDelete(invitation);
+    setDeleteDialogOpen(true);
   };
 
+  const closeDeleteDialog = () => {
+    setDeleteDialogOpen(false);
+    setInvitationToDelete(null);
+  };
 
+  const handleViewProject = (projectId: number) => {
+    navigate(`/project/${projectId}`);
+  };
 
   if (componentError) {
     return (
@@ -162,21 +169,21 @@ export const ReceivedInvitationsSection: React.FC = () => {
         }}
       >
         <Typography variant="h6" color="text.secondary" gutterBottom>
-          No Invitations
+          No Sent Invitations
         </Typography>
         <Typography variant="body2" color="text.secondary">
-          You haven't received any project invitations yet.
+          You haven't sent any project invitations yet.
         </Typography>
       </Paper>
     );
   }
 
-  console.log('Rendering invitations:', invitations);
+  console.log('Rendering sent invitations:', invitations);
 
   return (
     <Box>
       <Typography variant="h6" gutterBottom>
-        Received Invitations ({invitations.length})
+        Sent Invitations ({invitations.length})
       </Typography>
 
       <List>
@@ -204,10 +211,16 @@ export const ReceivedInvitationsSection: React.FC = () => {
                           variant="body1"
                           sx={{ fontWeight: 'medium' }}
                         >
-                          {invitation.fromUserData.username}
+                          You invited
+                        </Typography>
+                        <Typography
+                          variant="body1"
+                          sx={{ fontWeight: 'medium' }}
+                        >
+                          {invitation.toUserData?.username || 'Unknown User'}
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
-                          invited you to join
+                          to join
                         </Typography>
                       </Box>
                     }
@@ -228,46 +241,63 @@ export const ReceivedInvitationsSection: React.FC = () => {
                             {invitation.project.description}
                           </Typography>
                         )}
-                                            <Typography variant="caption" color="text.secondary">
-                      Sent on {formatInvitationDate(invitation.created_at)}
-                    </Typography>
+                        <Box
+                          sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 1,
+                            mb: 1,
+                          }}
+                        >
+                          <Chip
+                            label={invitation.status}
+                            color={
+                              invitation.status === 'accepted'
+                                ? 'success'
+                                : invitation.status === 'rejected'
+                                  ? 'error'
+                                  : 'warning'
+                            }
+                            size="small"
+                          />
+                          <Typography variant="caption" color="text.secondary">
+                            Sent on {formatInvitationDate(invitation.created_at)}
+                          </Typography>
+                        </Box>
                       </Box>
                     }
                   />
-                                <Box sx={{ display: 'flex', gap: 1, ml: 2 }}>
-                <Tooltip title="Accept Invitation">
-                  <IconButton
-                    size="small"
-                    color="success"
-                    onClick={() => handleAcceptInvitation(invitation)}
-                    disabled={processing === invitation.id}
-                  >
-                    <AcceptIcon />
-                  </IconButton>
-                </Tooltip>
-                <Tooltip title="Reject Invitation">
-                  <IconButton
-                    size="small"
-                    color="error"
-                    onClick={() => handleRejectInvitation(invitation)}
-                    disabled={processing === invitation.id}
-                  >
-                    <RejectIcon />
-                  </IconButton>
-                </Tooltip>
-              </Box>
+                  <Box sx={{ display: 'flex', gap: 1, ml: 2 }}>
+                    <Tooltip title="View Project">
+                      <IconButton
+                        size="small"
+                        onClick={() => handleViewProject(invitation.projectId)}
+                      >
+                        <ProjectIcon />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Delete Invitation">
+                      <IconButton
+                        size="small"
+                        onClick={() => openDeleteDialog(invitation)}
+                        disabled={processing === invitation.id}
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    </Tooltip>
+                  </Box>
                 </ListItem>
               </Paper>
             );
           } catch (err) {
-            console.error('Error rendering invitation:', invitation, err);
+            console.error('Error rendering sent invitation:', invitation, err);
             return (
               <Paper
                 key={invitation.id}
                 sx={{ mb: 2, p: 2, backgroundColor: '#ffebee' }}
               >
                 <Typography color="error">
-                  Error rendering invitation {invitation.id}
+                  Error rendering sent invitation {invitation.id}
                 </Typography>
               </Paper>
             );
@@ -275,7 +305,28 @@ export const ReceivedInvitationsSection: React.FC = () => {
         })}
       </List>
 
-
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onClose={closeDeleteDialog}>
+        <DialogTitle>Delete Invitation</DialogTitle>
+        <DialogContent>
+          <Typography>
+            Are you sure you want to delete this invitation? This action cannot
+            be undone.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeDeleteDialog} disabled={processing !== null}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleDeleteInvitation}
+            color="error"
+            disabled={processing !== null}
+          >
+            {processing === invitationToDelete?.id ? 'Deleting...' : 'Delete'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };
