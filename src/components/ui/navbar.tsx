@@ -15,6 +15,7 @@ import {
   Inventory as InventoryIcon,
   Group as CommunityIcon,
   ShoppingCart as ShoppingCartIcon,
+  Mail as InvitationsIcon,
 } from '@mui/icons-material';
 
 interface NavbarProps {
@@ -109,6 +110,14 @@ export const Navbar = ({ user, isAdmin = false }: NavbarProps) => {
                   <ShoppingCartIcon sx={{ color: 'white' }} />
                   <Typography variant="h6" component="div">
                     Shopping List
+                  </Typography>
+                </Box>
+              </NavbarItem>
+              <NavbarItem to="/invitations">
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <InvitationsIcon sx={{ color: 'white' }} />
+                  <Typography variant="h6" component="div">
+                    Invitations
                   </Typography>
                 </Box>
               </NavbarItem>

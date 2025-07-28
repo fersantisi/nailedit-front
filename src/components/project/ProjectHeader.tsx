@@ -5,6 +5,7 @@ import {
   CalendarToday as CalendarIcon,
   Note as NoteIcon,
   Visibility as ViewIcon,
+  PersonAdd as InviteIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import DeleteProject from './DeleteProject';
@@ -16,6 +17,7 @@ interface ProjectHeaderProps {
   permissions: ProjectPermissions;
   formatDate: (dateString: string) => string;
   onOpenProjectNotes?: () => void;
+  onInvite?: () => void;
 }
 
 export const ProjectHeader: React.FC<ProjectHeaderProps> = ({
@@ -24,6 +26,7 @@ export const ProjectHeader: React.FC<ProjectHeaderProps> = ({
   permissions,
   formatDate,
   onOpenProjectNotes,
+  onInvite,
 }) => {
   const navigate = useNavigate();
 
@@ -148,14 +151,24 @@ export const ProjectHeader: React.FC<ProjectHeaderProps> = ({
           </Button>
         )}
         {permissions.role === 'owner' && (
-          <Button
-            variant="outlined"
-            startIcon={<EditIcon />}
-            onClick={() => navigate(`/project/${projectId}/edit`)}
-            size="small"
-          >
-            Edit
-          </Button>
+          <>
+            <Button
+              variant="outlined"
+              startIcon={<EditIcon />}
+              onClick={() => navigate(`/project/${projectId}/edit`)}
+              size="small"
+            >
+              Edit
+            </Button>
+            <Button
+              variant="outlined"
+              startIcon={<InviteIcon />}
+              onClick={onInvite}
+              size="small"
+            >
+              Invite
+            </Button>
+          </>
         )}
         {permissions.role !== 'viewer' && (
           <DeleteProject projectId={projectId} permissions={permissions} />

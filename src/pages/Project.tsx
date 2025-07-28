@@ -22,6 +22,7 @@ import { ProjectStockSection } from '../components/project/ProjectStockSection';
 import { ProjectFilesSection } from '../components/project/ProjectFilesSection';
 import { TeamMembersSection } from '../components/community/TeamMembersSection';
 import { PendingRequestsSection } from '../components/community/PendingRequestsSection';
+import { InviteUserDialog } from '../components/project/InviteUserDialog';
 import { communityUtils } from '../utils/communityApi';
 import { formatDate, getPriorityColor } from '../utils/dateUtils';
 
@@ -37,6 +38,7 @@ export const Project = () => {
     null
   );
   const [permissionsLoading, setPermissionsLoading] = useState(true);
+  const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
 
   // Notes modal state
   const [notesModal, setNotesModal] = useState<{
@@ -83,6 +85,15 @@ export const Project = () => {
       projectId: parseInt(id!),
       title: 'Project Notes',
     });
+  };
+
+  const handleInviteClick = () => {
+    setInviteDialogOpen(true);
+  };
+
+  const handleInvitationSent = () => {
+    // Refresh the page to show updated participant list
+    window.location.reload();
   };
 
   useEffect(() => {
@@ -296,6 +307,7 @@ export const Project = () => {
             permissions={permissions}
             formatDate={formatDate}
             onOpenProjectNotes={openProjectNotesModal}
+            onInvite={handleInviteClick}
           />
         )}
 
@@ -370,6 +382,14 @@ export const Project = () => {
         taskId={notesModal.taskId}
         title={notesModal.title}
         userName={user?.username || ''}
+      />
+
+      <InviteUserDialog
+        open={inviteDialogOpen}
+        onClose={() => setInviteDialogOpen(false)}
+        projectId={parseInt(id!)}
+        projectName={projectData?.name || ''}
+        onInvitationSent={handleInvitationSent}
       />
     </>
   );
