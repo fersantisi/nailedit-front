@@ -1,5 +1,4 @@
 import { Box, CircularProgress, Alert, Typography } from '@mui/material';
-import { HomeMoreButton } from './HomeMoreButton';
 import { HomeTitle } from './HomeTitle';
 import { HomeTaskCard } from './HomeTaskCard';
 import { useEffect, useState } from 'react';
@@ -190,7 +189,7 @@ export const HomeScheduleSection = () => {
       const bDue = b.dueDate ? new Date(b.dueDate).getTime() : 0;
       return aDue - bDue;
     })
-    .slice(0, 4);
+    .slice(0, 3);
 
   const overdueTasks = incompleteTasks
     .filter((task) => {
@@ -203,7 +202,7 @@ export const HomeScheduleSection = () => {
       const bDue = b.dueDate ? new Date(b.dueDate).getTime() : 0;
       return bDue - aDue;
     })
-    .slice(0, 4);
+    .slice(0, 3);
 
   if (loading) {
     return (
@@ -287,18 +286,37 @@ export const HomeScheduleSection = () => {
           ) : (
             <Box
               sx={{
-                display: 'grid',
-                gridTemplateColumns: {
-                  xs: 'repeat(2, 1fr)',
-                  sm: 'repeat(3, 1fr)',
-                  md: 'repeat(4, 1fr)',
-                },
+                display: 'flex',
                 gap: 1.5,
+                maxWidth: '800px',
+                overflow: 'hidden',
               }}
             >
-              {overdueTasks.map((task) => (
-                <Box key={task.id} sx={{ minHeight: '120px' }}>
-                  <HomeTaskCard task={task} />
+              {Array.from({ length: 3 }, (_, index) => (
+                <Box
+                  key={index}
+                  sx={{ flex: 1, minHeight: '120px', minWidth: '150px' }}
+                >
+                  {overdueTasks[index] ? (
+                    <HomeTaskCard task={overdueTasks[index]} />
+                  ) : (
+                    <Box
+                      sx={{
+                        height: '120px',
+                        backgroundColor: 'background.paper',
+                        borderRadius: 1,
+                        border: '1px dashed',
+                        borderColor: 'divider',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <Typography variant="body2" color="text.secondary">
+                        No task
+                      </Typography>
+                    </Box>
+                  )}
                 </Box>
               ))}
             </Box>
@@ -329,31 +347,39 @@ export const HomeScheduleSection = () => {
           ) : (
             <Box
               sx={{
-                display: 'grid',
-                gridTemplateColumns: {
-                  xs: 'repeat(2, 1fr)',
-                  sm: 'repeat(3, 1fr)',
-                  md: 'repeat(4, 1fr)',
-                },
+                display: 'flex',
                 gap: 1.5,
+                maxWidth: '800px',
+                overflow: 'hidden',
               }}
             >
-              {upcomingTasks.map((task) => (
-                <Box key={task.id} sx={{ minHeight: '120px' }}>
-                  <HomeTaskCard task={task} />
+              {Array.from({ length: 3 }, (_, index) => (
+                <Box
+                  key={index}
+                  sx={{ flex: 1, minHeight: '120px', minWidth: '150px' }}
+                >
+                  {upcomingTasks[index] ? (
+                    <HomeTaskCard task={upcomingTasks[index]} />
+                  ) : (
+                    <Box
+                      sx={{
+                        height: '120px',
+                        backgroundColor: 'background.paper',
+                        borderRadius: 1,
+                        border: '1px dashed',
+                        borderColor: 'divider',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <Typography variant="body2" color="text.secondary">
+                        No task
+                      </Typography>
+                    </Box>
+                  )}
                 </Box>
               ))}
-              {tasks.length > 8 && (
-                <Box
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <HomeMoreButton edge="50px" fontSize="15px" iconSize="30px" />
-                </Box>
-              )}
             </Box>
           )}
         </Box>
