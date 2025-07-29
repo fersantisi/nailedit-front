@@ -292,32 +292,20 @@ export const HomeScheduleSection = () => {
                 overflow: 'hidden',
               }}
             >
-              {Array.from({ length: 3 }, (_, index) => (
+              {overdueTasks.map((task, index) => (
                 <Box
                   key={index}
                   sx={{ flex: 1, minHeight: '120px', minWidth: '150px' }}
                 >
-                  {overdueTasks[index] ? (
-                    <HomeTaskCard task={overdueTasks[index]} />
-                  ) : (
-                    <Box
-                      sx={{
-                        height: '120px',
-                        backgroundColor: 'background.paper',
-                        borderRadius: 1,
-                        border: '1px dashed',
-                        borderColor: 'divider',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      }}
-                    >
-                      <Typography variant="body2" color="text.secondary">
-                        No task
-                      </Typography>
-                    </Box>
-                  )}
+                  <HomeTaskCard task={task} />
                 </Box>
+              ))}
+              {/* Add empty space to maintain 3-card width */}
+              {Array.from({ length: Math.max(0, 3 - overdueTasks.length) }, (_, index) => (
+                <Box
+                  key={`empty-${index}`}
+                  sx={{ flex: 1, minHeight: '120px', minWidth: '150px' }}
+                />
               ))}
             </Box>
           )}
@@ -353,32 +341,20 @@ export const HomeScheduleSection = () => {
                 overflow: 'hidden',
               }}
             >
-              {Array.from({ length: 3 }, (_, index) => (
+              {upcomingTasks.map((task, index) => (
                 <Box
                   key={index}
                   sx={{ flex: 1, minHeight: '120px', minWidth: '150px' }}
                 >
-                  {upcomingTasks[index] ? (
-                    <HomeTaskCard task={upcomingTasks[index]} />
-                  ) : (
-                    <Box
-                      sx={{
-                        height: '120px',
-                        backgroundColor: 'background.paper',
-                        borderRadius: 1,
-                        border: '1px dashed',
-                        borderColor: 'divider',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      }}
-                    >
-                      <Typography variant="body2" color="text.secondary">
-                        No task
-                      </Typography>
-                    </Box>
-                  )}
+                  <HomeTaskCard task={task} />
                 </Box>
+              ))}
+              {/* Add empty space to maintain 3-card width */}
+              {Array.from({ length: Math.max(0, 3 - upcomingTasks.length) }, (_, index) => (
+                <Box
+                  key={`empty-${index}`}
+                  sx={{ flex: 1, minHeight: '120px', minWidth: '150px' }}
+                />
               ))}
             </Box>
           )}
