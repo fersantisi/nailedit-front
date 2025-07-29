@@ -32,6 +32,7 @@ interface ProfileData {
   id: number;
   username: string;
   email: string;
+  notification_time?: number;
   notificationSettings?: NotificationSettingsType;
 }
 
@@ -108,9 +109,26 @@ export const Profile = () => {
           setUser(userData);
           setProfileData(userData);
 
-          // Set notification settings from user data or use defaults
-          if (userData.notificationSettings) {
-            setNotificationSettings(userData.notificationSettings);
+          // Configure notification settings based on notification_time
+          if (userData.notification_time !== undefined) {
+            if (userData.notification_time === -1) {
+              // Notifications are disabled
+              setNotificationSettings({
+                emailNotificationsEnabled: false,
+                dueDateThreshold: 3, // Default threshold when disabled
+              });
+            } else {
+              // Notifications are enabled with the specified threshold
+              setNotificationSettings({
+                emailNotificationsEnabled: true,
+                dueDateThreshold: userData.notification_time,
+              });
+            }
+          } else {
+            // Fallback to existing notificationSettings if available
+            if (userData.notificationSettings) {
+              setNotificationSettings(userData.notificationSettings);
+            }
           }
         } else {
           setUser(null);
@@ -200,17 +218,19 @@ export const Profile = () => {
       setNotificationError(null);
       setNotificationSuccess(null);
 
-      const updatedSettings =
-        await notificationApi.updateNotificationSettings(notificationSettings);
+      await notificationApi.updateNotificationSettings(notificationSettings);
 
       setNotificationSuccess('Notification settings updated successfully!');
-      setNotificationSettings(updatedSettings);
 
-      // Update the profile data with new settings
+      // Update the profile data with the current notification_time value
       if (profileData) {
+        const notificationTime = notificationSettings.emailNotificationsEnabled
+          ? notificationSettings.dueDateThreshold
+          : -1;
+
         setProfileData({
           ...profileData,
-          notificationSettings: updatedSettings,
+          notification_time: notificationTime,
         });
       }
     } catch (error) {

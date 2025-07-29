@@ -31,14 +31,16 @@ export const notificationApi = {
   async updateNotificationSettings(
     settings: NotificationSettings
   ): Promise<NotificationSettings> {
-    const response = await fetch(
-      `${API_BASE_URL}/users/notification-settings`,
-      {
-        method: 'PUT',
-        ...defaultFetchOptions,
-        body: JSON.stringify(settings),
-      }
-    );
+    // Send -1 if notifications are disabled, otherwise send the threshold number
+    const notificationValue = settings.emailNotificationsEnabled
+      ? settings.dueDateThreshold
+      : -1;
+
+    const response = await fetch(`${API_BASE_URL}/users/notification`, {
+      method: 'PUT',
+      ...defaultFetchOptions,
+      body: JSON.stringify({ NotificationTimer: notificationValue }),
+    });
 
     if (!response.ok) {
       const errorData = await response.json();
