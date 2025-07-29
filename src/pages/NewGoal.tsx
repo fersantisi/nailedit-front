@@ -159,7 +159,7 @@ export const NewGoal = () => {
           body: JSON.stringify({
             name: goalName.trim(),
             description: goalDescription.trim() || undefined,
-            dueDate: duedate || undefined,
+            dueDate: duedate || null,
           }),
           headers: {
             'Content-Type': 'application/json',

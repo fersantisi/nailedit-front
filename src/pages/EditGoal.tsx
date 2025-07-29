@@ -164,7 +164,7 @@ export const EditGoal = () => {
           body: JSON.stringify({
             name: name.trim(),
             description: description.trim() || undefined,
-            dueDate: duedate || undefined,
+            dueDate: duedate || null,
           }),
           headers: {
             'Content-Type': 'application/json',

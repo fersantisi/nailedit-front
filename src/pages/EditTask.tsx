@@ -178,7 +178,7 @@ export const EditTask = () => {
             name: name.trim(),
             description: description.trim() || undefined,
             label: label.trim() || undefined,
-            dueDate: duedate || undefined,
+            dueDate: duedate || null,
           }),
           headers: {
             'Content-Type': 'application/json',

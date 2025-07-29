@@ -166,7 +166,7 @@ export const NewTask = () => {
             name: taskName.trim(),
             description: taskDescription.trim() || undefined,
             label: taskLabel.trim() || undefined,
-            dueDate: duedate || undefined,
+            dueDate: duedate || null,
           }),
           headers: {
             'Content-Type': 'application/json',

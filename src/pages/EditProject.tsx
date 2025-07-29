@@ -201,7 +201,7 @@ export const EditProject = () => {
             description: description.trim() || undefined,
             category: category.trim() || undefined,
             image: image.trim() || undefined,
-            dueDate: duedate || undefined,
+            dueDate: duedate || null,
             privacy: privacy === 'true',
           }),
           headers: {
