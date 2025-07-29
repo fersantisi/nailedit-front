@@ -59,6 +59,26 @@ export const GoalCard: React.FC<GoalCardProps> = ({
       );
       if (response.ok) {
         setCompleted((prev) => !prev);
+
+        // If goal is being completed, also complete all tasks
+        if (!completed && goal.tasks && goal.tasks.length > 0) {
+          const taskCompletionPromises = goal.tasks.map(async (task) => {
+            if (!task.completed) {
+              return fetch(
+                `${import.meta.env.VITE_SERVER_URL}/project/${projectId}/goal/${goal.id}/task/${task.id}/complete`,
+                {
+                  method: 'PATCH',
+                  headers: { 'Content-Type': 'application/json' },
+                  credentials: 'include',
+                  body: JSON.stringify({ completed: true }),
+                }
+              );
+            }
+          });
+
+          // Wait for all task completions to finish
+          await Promise.all(taskCompletionPromises);
+        }
       }
     } finally {
       setLoading(false);
