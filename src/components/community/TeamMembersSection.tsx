@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Paper,
@@ -26,6 +27,7 @@ import {
   Group as GroupIcon,
   Star as StarIcon,
   PersonAdd as InviteIcon,
+  ExitToApp as LeaveIcon,
 } from '@mui/icons-material';
 import { Participant, User, Project, ProjectPermissions } from '../../types';
 import { participantApi } from '../../utils/communityApi';
@@ -45,6 +47,7 @@ export const TeamMembersSection: React.FC<TeamMembersSectionProps> = ({
   onParticipantRemoved,
   onInvite,
 }) => {
+  const navigate = useNavigate();
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -183,9 +186,12 @@ export const TeamMembersSection: React.FC<TeamMembersSectionProps> = ({
   };
 
   const handleRemoveClick = (participant: Participant) => {
-    // Additional safety check before opening dialog
-    if (!isOwner) {
-      setError('Only project owners can remove participants');
+    // Check if user is removing themselves
+    const isSelfRemoval = participant.userId === currentUser.id;
+
+    // Allow self-removal for non-owners, or owner removal for owners
+    if (!isOwner && !isSelfRemoval) {
+      setError('Only project owners can remove other participants');
       return;
     }
 
@@ -201,9 +207,12 @@ export const TeamMembersSection: React.FC<TeamMembersSectionProps> = ({
   const handleRemoveConfirm = async () => {
     if (!participantToRemove) return;
 
+    // Check if user is removing themselves
+    const isSelfRemoval = participantToRemove.userId === currentUser.id;
+    
     // Check if user has permission to remove participants
-    if (!isOwner) {
-      setError('Only project owners can remove participants');
+    if (!isOwner && !isSelfRemoval) {
+      setError('Only project owners can remove other participants');
       return;
     }
 
@@ -227,13 +236,20 @@ export const TeamMembersSection: React.FC<TeamMembersSectionProps> = ({
         );
       }
 
-      setSuccess(
-        `${participantToRemove.user?.username} has been removed from the project`
-      );
-
-      // Refresh participants list
-      await fetchParticipants();
-      onParticipantRemoved?.();
+      if (isSelfRemoval) {
+        setSuccess('You have successfully left the project');
+        // Redirect to home after a short delay
+        setTimeout(() => {
+          navigate('/');
+        }, 1500);
+      } else {
+        setSuccess(
+          `${participantToRemove.user?.username} has been removed from the project`
+        );
+        // Refresh participants list
+        await fetchParticipants();
+        onParticipantRemoved?.();
+      }
     } catch (error) {
       console.error('Error removing participant:', error);
       setError(
@@ -285,13 +301,13 @@ export const TeamMembersSection: React.FC<TeamMembersSectionProps> = ({
                 startIcon={<InviteIcon />}
                 onClick={onInvite}
                 size="small"
-                sx={{ 
-                  color: '#e2e2e2', 
+                sx={{
+                  color: '#e2e2e2',
                   borderColor: '#79799a',
                   '&:hover': {
                     borderColor: '#e2e2e2',
-                    backgroundColor: 'rgba(255, 255, 255, 0.08)'
-                  }
+                    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                  },
                 }}
               >
                 Invite
@@ -355,42 +371,46 @@ export const TeamMembersSection: React.FC<TeamMembersSectionProps> = ({
           </ListItem>
 
           {/* Team Members */}
-          {participants.map((participant) => (
-            <ListItem
-              key={participant.id}
-              sx={{
-                backgroundColor: '#2e2e2e',
-                borderRadius: 1,
-                mb: 1,
-                px: 2,
-                py: 1,
-              }}
-              secondaryAction={
-                isOwner ? (
-                  <Tooltip title="Remove from project">
-                    <IconButton
-                      edge="end"
-                      color="error"
-                      onClick={() => handleRemoveClick(participant)}
-                      size="small"
-                    >
-                      <DeleteIcon />
-                    </IconButton>
-                  </Tooltip>
-                ) : (
-                  <Tooltip title="Only project owners can remove participants">
-                    <IconButton
-                      edge="end"
-                      color="default"
-                      disabled
-                      size="small"
-                    >
-                      <DeleteIcon />
-                    </IconButton>
-                  </Tooltip>
-                )
-              }
-            >
+          {participants.map((participant) => {
+            const isCurrentUser = participant.userId === currentUser.id;
+            const canRemove = isOwner || isCurrentUser;
+            
+            return (
+              <ListItem
+                key={participant.id}
+                sx={{
+                  backgroundColor: '#2e2e2e',
+                  borderRadius: 1,
+                  mb: 1,
+                  px: 2,
+                  py: 1,
+                }}
+                secondaryAction={
+                  canRemove ? (
+                    <Tooltip title={isCurrentUser ? "Leave project" : "Remove from project"}>
+                      <IconButton
+                        edge="end"
+                        color={isCurrentUser ? "warning" : "error"}
+                        onClick={() => handleRemoveClick(participant)}
+                        size="small"
+                      >
+                        {isCurrentUser ? <LeaveIcon /> : <DeleteIcon />}
+                      </IconButton>
+                    </Tooltip>
+                  ) : (
+                    <Tooltip title="Only project owners can remove participants">
+                      <IconButton
+                        edge="end"
+                        color="default"
+                        disabled
+                        size="small"
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    </Tooltip>
+                  )
+                }
+              >
               <ListItemAvatar>
                 <Avatar sx={{ backgroundColor: '#4c4a52' }}>
                   <PersonIcon />
@@ -411,7 +431,8 @@ export const TeamMembersSection: React.FC<TeamMembersSectionProps> = ({
                 }
               />
             </ListItem>
-          ))}
+          );
+          })}
 
           {/* Show message when only owner (no participants) */}
           {participants.length === 0 && (
@@ -444,16 +465,24 @@ export const TeamMembersSection: React.FC<TeamMembersSectionProps> = ({
           sx: { backgroundColor: '#3a3a3a', color: '#e2e2e2' },
         }}
       >
-        <DialogTitle>Remove Team Member</DialogTitle>
+        <DialogTitle>
+          {participantToRemove?.userId === currentUser.id 
+            ? 'Leave Project' 
+            : 'Remove Team Member'
+          }
+        </DialogTitle>
         <DialogContent>
           <Typography>
-            Are you sure you want to remove{' '}
-            <strong>{participantToRemove?.user?.username}</strong> from this
-            project?
+            {participantToRemove?.userId === currentUser.id 
+              ? 'Are you sure you want to leave this project?'
+              : `Are you sure you want to remove ${participantToRemove?.user?.username} from this project?`
+            }
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-            This action cannot be undone. They will lose access to all project
-            resources.
+            {participantToRemove?.userId === currentUser.id
+              ? 'You will lose access to all project resources and will be redirected to the home page.'
+              : 'This action cannot be undone. They will lose access to all project resources.'
+            }
           </Typography>
         </DialogContent>
         <DialogActions>
@@ -462,11 +491,13 @@ export const TeamMembersSection: React.FC<TeamMembersSectionProps> = ({
           </Button>
           <Button
             onClick={handleRemoveConfirm}
-            color="error"
+            color={participantToRemove?.userId === currentUser.id ? "warning" : "error"}
             variant="contained"
             disabled={removing}
           >
-            {removing ? <CircularProgress size={20} /> : 'Remove'}
+            {removing ? <CircularProgress size={20} /> : 
+              participantToRemove?.userId === currentUser.id ? 'Leave Project' : 'Remove'
+            }
           </Button>
         </DialogActions>
       </Dialog>
