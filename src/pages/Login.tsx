@@ -1,9 +1,17 @@
 import { Card } from '../components/ui/card';
-import { Box, Button, Alert, Typography, TextField } from '@mui/material';
+import {
+  Box,
+  Button,
+  Alert,
+  Typography,
+  TextField,
+  Divider,
+} from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { Navbar } from '../components/ui/navbar';
 import { useState, useEffect } from 'react';
 import { User } from '../types';
+import { GoogleLoginButton } from '../components/ui/GoogleLoginButton';
 
 export const Login = () => {
   const navigate = useNavigate();
@@ -193,6 +201,22 @@ export const Login = () => {
               Login
             </Button>
           </Box>
+
+          <Divider sx={{ my: 2 }}>
+            <Typography variant="body2" color="text.secondary">
+              OR
+            </Typography>
+          </Divider>
+
+          <GoogleLoginButton
+            onSuccess={(data) => {
+              console.log('Google login successful:', data);
+            }}
+            onError={(error) => {
+              console.error('Google login error:', error);
+              setErrorMessage('Google login failed. Please try again.');
+            }}
+          />
 
           <Box
             sx={{

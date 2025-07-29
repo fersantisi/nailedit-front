@@ -24,6 +24,7 @@ import { StockPage } from './pages/Stock';
 import { Community } from './pages/Community';
 import { ShoppingListPage } from './pages/ShoppingList';
 import { Invitations } from './pages/Invitations';
+import { GoogleOAuthProvider } from '@react-oauth/google';
 
 const theme = createTheme({
   palette: {
@@ -45,89 +46,94 @@ const theme = createTheme({
 
 function App() {
   return (
-    <Box
-      sx={{
-        minHeight: '100vh',
-        width: '100%',
-        backgroundColor: '#2e2e2e',
-      }}
-    >
-      <ThemeProvider theme={theme}>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route
-            path="/login"
-            element={
-              <GuestRoute>
-                <Login />
-              </GuestRoute>
-            }
-          />
-          <Route
-            path="/register"
-            element={
-              <GuestRoute>
-                <Register />
-              </GuestRoute>
-            }
-          />
-          <Route
-            path="/forgot-password"
-            element={
-              <GuestRoute>
-                <PasswordRecovery />
-              </GuestRoute>
-            }
-          />
-          <Route
-            path="/recoverPassword/:token"
-            element={
-              <GuestRoute>
-                <PasswordReset />
-              </GuestRoute>
-            }
-          />
-          <Route
-            path="/auth/recoverPassword/:token"
-            element={
-              <GuestRoute>
-                <PasswordReset />
-              </GuestRoute>
-            }
-          />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/calendar" element={<Calendar />} />
-          <Route path="/gantt" element={<Gantt />} />
-          <Route path="/stock" element={<StockPage />} />
-          <Route path="/shopping-list" element={<ShoppingListPage />} />
-          <Route path="/community" element={<Community />} />
-          <Route path="/project/list" element={<ProjectList />} />
-          <Route path="/project/:id" element={<Project />} />
-          <Route path="/project/:id/edit" element={<EditProject />} />
-          <Route path="/project/create" element={<NewProject />} />
-          <Route path="/project/:id/goal/create" element={<NewGoal />} />
-          <Route path="/project/:id/goal/:goalId/edit" element={<EditGoal />} />
-          <Route
-            path="/project/:id/goal/:goalId/task/:taskId/edit"
-            element={<EditTask />}
-          />
-          <Route
-            path="/project/:id/goal/:goalId/task/create"
-            element={<NewTask />}
-          />
-          <Route path="/logout" element={<Logout />} />
-          <Route
-            path="/admin/users"
-            element={
-              <AdminRoute>
-                <AdminUsers />
-              </AdminRoute>
-            }
-          />
-          <Route path="/invitations" element={<Invitations />} />
-        </Routes>
-      </ThemeProvider>
-    </Box>
+    <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID || ''}>
+      <Box
+        sx={{
+          minHeight: '100vh',
+          width: '100%',
+          backgroundColor: '#2e2e2e',
+        }}
+      >
+        <ThemeProvider theme={theme}>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route
+              path="/login"
+              element={
+                <GuestRoute>
+                  <Login />
+                </GuestRoute>
+              }
+            />
+            <Route
+              path="/register"
+              element={
+                <GuestRoute>
+                  <Register />
+                </GuestRoute>
+              }
+            />
+            <Route
+              path="/forgot-password"
+              element={
+                <GuestRoute>
+                  <PasswordRecovery />
+                </GuestRoute>
+              }
+            />
+            <Route
+              path="/recoverPassword/:token"
+              element={
+                <GuestRoute>
+                  <PasswordReset />
+                </GuestRoute>
+              }
+            />
+            <Route
+              path="/auth/recoverPassword/:token"
+              element={
+                <GuestRoute>
+                  <PasswordReset />
+                </GuestRoute>
+              }
+            />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/calendar" element={<Calendar />} />
+            <Route path="/gantt" element={<Gantt />} />
+            <Route path="/stock" element={<StockPage />} />
+            <Route path="/shopping-list" element={<ShoppingListPage />} />
+            <Route path="/community" element={<Community />} />
+            <Route path="/project/list" element={<ProjectList />} />
+            <Route path="/project/:id" element={<Project />} />
+            <Route path="/project/:id/edit" element={<EditProject />} />
+            <Route path="/project/create" element={<NewProject />} />
+            <Route path="/project/:id/goal/create" element={<NewGoal />} />
+            <Route
+              path="/project/:id/goal/:goalId/edit"
+              element={<EditGoal />}
+            />
+            <Route
+              path="/project/:id/goal/:goalId/task/:taskId/edit"
+              element={<EditTask />}
+            />
+            <Route
+              path="/project/:id/goal/:goalId/task/create"
+              element={<NewTask />}
+            />
+            <Route path="/logout" element={<Logout />} />
+            <Route
+              path="/admin/users"
+              element={
+                <AdminRoute>
+                  <AdminUsers />
+                </AdminRoute>
+              }
+            />
+            <Route path="/invitations" element={<Invitations />} />
+          </Routes>
+        </ThemeProvider>
+      </Box>
+    </GoogleOAuthProvider>
   );
 }
 
